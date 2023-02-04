@@ -2,12 +2,16 @@ package fi.haagahelia.stockmanager.model.user;
 
 
 import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "BRU_ROLE")
-public class Employee {
+@Table(name = "BRU_EMPLOYEE")
+public class Employee implements UserDetails {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */
 
@@ -31,28 +35,33 @@ public class Employee {
     @Column(name = "emp_password", nullable = false)
     private String password;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "emp_is_active", nullable = false)
     private Boolean isActive;
+
+    @Column(name = "emp_is_blocked", nullable = false)
+    private Boolean isBlocked;
 
     /* -------------------------------------------------- RELATIONS ------------------------------------------------- */
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "emp_role_id")
-    private Role role;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "BRU_EMP_ROLES",
+            joinColumns = @JoinColumn(name = "employee_id", referencedColumnName = "emp_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "rol_id"))
+    private List<Role> roles = new ArrayList<>();
 
     /* ------------------------------------------------ CONSTRUCTORS ------------------------------------------------ */
 
     public Employee() { }
 
     public Employee(String email, String username, String firstName, String lastName, String password,
-                    Boolean isActive, Role role) {
+                    Boolean isActive, Boolean isBlocked) {
         this.email = email;
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
         this.isActive = isActive;
-        this.role = role;
+        this.isBlocked = isBlocked;
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -80,6 +89,7 @@ public class Employee {
                 ", lastName='" + lastName + '\'' +
                 ", password='" + password + '\'' +
                 ", isActive=" + isActive +
+                ", isBlocked=" + isBlocked +
                 '}';
     }
 
@@ -101,6 +111,7 @@ public class Employee {
         this.email = email;
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
@@ -125,6 +136,7 @@ public class Employee {
         this.lastName = lastName;
     }
 
+    @Override
     public String getPassword() {
         return password;
     }
@@ -141,11 +153,55 @@ public class Employee {
         isActive = active;
     }
 
-    public Role getRole() {
-        return role;
+    public Boolean getBlocked() {
+        return isBlocked;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setBlocked(Boolean blocked) {
+        isBlocked = blocked;
+    }
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
+    }
+
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
+
+    public void removeRole(Role role) {
+        this.roles.remove(role);
+    }
+
+    /* -------------------------------- TOOLS RELATED TO USER DETAILS IMPLEMENTATION -------------------------------- */
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.roles.stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        if (!isBlocked) return true;
+        return false;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isActive;
     }
 }

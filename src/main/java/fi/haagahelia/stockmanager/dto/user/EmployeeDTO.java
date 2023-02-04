@@ -20,6 +20,7 @@ public class EmployeeDTO extends RepresentationModel<EmployeeDTO> {
     private String lastName;
     private String password;
     private Boolean isActive;
+    private Boolean isBlocked;
 
     /* ------------------------------------------------- CONVERTORS ------------------------------------------------- */
 
@@ -32,6 +33,7 @@ public class EmployeeDTO extends RepresentationModel<EmployeeDTO> {
                 .lastName(employee.getLastName())
                 .password(employee.getPassword())
                 .isActive(employee.getActive())
+                .isBlocked(employee.getBlocked())
                 .build();
     }
 }
