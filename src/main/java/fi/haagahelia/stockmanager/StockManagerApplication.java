@@ -22,7 +22,7 @@ public class StockManagerApplication {
     @Bean
     CommandLineRunner commandLineRunner(RoleRepository rRepository, EmployeeRepository eRepository) {
         return args -> {
-
+            /*
             Role admin = new Role("Admin", "For the admins"); rRepository.save(admin);
             Role manager = new Role("Manager", "For the managers");  rRepository.save(manager);
             Role vendor = new Role("Vendors", "For the vendors"); rRepository.save(vendor);
@@ -41,7 +41,7 @@ public class StockManagerApplication {
             Employee ven = new Employee("ven@haaga.fi", "ven", "Ven", "Haaga",
                     new BCryptPasswordEncoder().encode("A1234"), true, false);
             eRepository.save(ven);
-
+            */
         };
     }
 

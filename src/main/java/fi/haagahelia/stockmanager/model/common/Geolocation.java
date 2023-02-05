@@ -1,7 +1,6 @@
 package fi.haagahelia.stockmanager.model.common;
 
 import jakarta.persistence.*;
-
 import java.util.Objects;
 
 @Entity

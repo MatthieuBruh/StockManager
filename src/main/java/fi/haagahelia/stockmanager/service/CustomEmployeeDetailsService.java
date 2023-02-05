@@ -28,7 +28,7 @@ public class CustomEmployeeDetailsService implements UserDetailsService {
         if (employeeOptional.isEmpty()) {
             throw new UsernameNotFoundException(MessageFormat.format("No employee found with the username: {}", username));
         }
-        System.out.println("=== ICI ===");
+
         return employeeOptional.get();
     }
 }

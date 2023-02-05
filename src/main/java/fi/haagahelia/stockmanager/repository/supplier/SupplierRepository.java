@@ -9,4 +9,7 @@ import java.util.Optional;
 @Repository
 public interface SupplierRepository extends JpaRepository<Supplier, Long> {
     Optional<Supplier> findById(Long id);
+    Optional<Supplier> findByName(String name);
+    Boolean existsByName(String name);
+    Boolean existsByGeolocationId(Long id);
 }
