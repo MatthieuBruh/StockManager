@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +54,8 @@ public class EmployeeController {
     private EmployeeDTO createHATEOAS(EmployeeDTO employeeDTO) {
         Link selfLink = linkTo(EmployeeController.class).slash(String.valueOf(employeeDTO.getId())).withSelfRel();
         employeeDTO.add(selfLink);
-        Link collectionLink = linkTo(methodOn(EmployeeController.class)).slash("").withRel("employees");
+        Link collectionLink = linkTo(EmployeeController.class).slash("").withRel("employees");
+        // Link collectionLink = linkTo(methodOn(EmployeeController.class)).slash("/").withRel("employees");
         employeeDTO.add(collectionLink);
         return employeeDTO;
     }
@@ -100,7 +100,6 @@ public class EmployeeController {
         return Pair.of(HttpStatus.ACCEPTED, "");
     }
 
-
     /* ------------------------------------------------- API METHODS ------------------------------------------------ */
 
     /**
@@ -136,11 +135,11 @@ public class EmployeeController {
      * Available for: ROLE_ADMIN
      * This function is used to get an employee by his id.
      * Firstly, we find the employee in the database, using the employee repository.
-     * Secondly, we check that the optional returned by the previous step is not empty.
+     * Secondly, we check that the optional received in parameter step is not empty.
      *      If it is empty, we return an HttpStatus.NO_CONTENT to the user.
      * Thirdly, we can convert the employee as EmployeeDTO, and we can add him the HATEOAS links.
      * Finally, we can return the data to the user with an HttpStatus.OK.
-     * @param id Corresponds to the employee id searched by the user.
+     * @param id Corresponds to the employee's id searched by the user.
      * @param user Corresponds to the user that is authenticated.
      * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
      */
@@ -156,7 +155,8 @@ public class EmployeeController {
         }
         EmployeeDTO employeeDTO = EmployeeDTO.convert(employeeOptional.get());
         createHATEOAS(employeeDTO);
-        log.info("User {} requested to get the employee with id: {}. RETURNING DATA.", user.getUsername(), id);
+        log.info("User {} requested to get the employee with id: {}. RETURNING DATA.",
+                user.getUsername(), employeeDTO.getId());
         return new ResponseEntity<>(employeeDTO ,HttpStatus.OK);
     }
 
@@ -192,7 +192,7 @@ public class EmployeeController {
         employee.setLastName(employeeCuDTO.getLastName());
         employee.setPassword(passwordEncoder.encode(employeeCuDTO.getPassword()));
         employee.setActive(false);
-        employee.setBlocked(false);
+        employee.setBlocked(true);
         Optional<Role> roleOptional = rRepository.findByName("ROLE_VENDOR");
         if (roleOptional.isEmpty()) {
             log.info("User {} requested to create a new employee with email: '{}'. DEFAULT ROLE NOT FOUND.",
@@ -226,7 +226,7 @@ public class EmployeeController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable(value = "id") Long id,
+    public @ResponseBody ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable(value = "id") Long id,
                                                       @RequestBody EmployeeCuDTO employeeCuDTO,
                                                       @AuthenticationPrincipal Employee user) {
         log.info("User {} requested to update the employee with id: {}", "AUTH IS NOT SET", id);
@@ -253,9 +253,66 @@ public class EmployeeController {
         log.warn("User {} requested to update the employee with id: {}. UPDATING EMPLOYEE.", user.getUsername(), id);
         Employee savedEmployee = eRepository.save(employee);
         EmployeeDTO employeeDTO = EmployeeDTO.convert(savedEmployee);
+        createHATEOAS(employeeDTO);
         log.info("User {} requested to update the employee with id: {}. EMPLOYEE UPDATED.", user.getUsername(), id);
-        return new ResponseEntity<>(createHATEOAS(employeeDTO), HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(employeeDTO, HttpStatus.ACCEPTED);
     }
 
-    // DELETE OF AN EMPLOYEE --> ONLY IF HE HAS NO CUSTOMER ORDER RELATED
+    /**
+     * Available for: ROLE_ADMIN
+     * This function is used to re-activate an employee account by the employee id.
+     * Firstly, we check that the employee account exists by using the employee repository.
+     *      If not, we return an HttpStatus.NO_CONTENT to the user.
+     * Secondly, we change setActive to true and we setBlocked to false, and we save the modification.
+     * Finally, we convert the employee as an EmployeeDTO and we return it to the user with an HttpStatus.ACCPETED.
+     * @param id Corresponds to the id to the user to activate.
+     * @param user Corresponds to the authenticated user
+     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if it exists.
+     */
+    @PutMapping(value = "/{id}/activate", produces = "application/json")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public @ResponseBody ResponseEntity<EmployeeDTO> activateEmployee(@PathVariable(value = "id") Long id,
+                                                        @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to activate the employee with id: {}.", user.getUsername(), id);
+        Optional<Employee> employeeOptional = eRepository.findById(id);
+        if (employeeOptional.isEmpty()) {
+            log.info("User {} requested to activate the employee with id: {}. NO DATA FOUND.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        Employee employee = employeeOptional.get();
+        employee.setActive(true);
+        employee.setBlocked(false);
+        log.warn("User {} requested to activate the employee with id: {}. ACTIVATING EMPLOYEE.", user.getUsername(), id);
+        Employee savedEmployee = eRepository.save(employee);
+        EmployeeDTO employeeDTO = EmployeeDTO.convert(savedEmployee);
+        createHATEOAS(employeeDTO);
+        log.info("User {} requested to activate the employee with id: {}. EMPLOYEE UPDATED.", user.getUsername(), id);
+        return new ResponseEntity<>(employeeDTO, HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * Available for: ROLE_ADMIN
+     * This function is used to "delete" an employee by his id.
+     * Firstly, we check that an employee exists with the given id.
+     *      If not, we return an HttpStatus.NO_CONTENT to the user.
+     * Secondly, we set the employee as blocked and activate false. Then, we can save the data.
+     * Finally, we return to the user an HttpStatus.ACCEPTED.
+     * @param id Corresponds to the id to the user to "delete".
+     * @param user Corresponds to the authenticated user
+     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if it exists.
+     */
+    @DeleteMapping(value = "/{id}", produces = "application/json")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public @ResponseBody ResponseEntity<EmployeeDTO> deleteEmployeeById(@PathVariable(value = "id") Long id,
+                                                                        @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to delete the employee with id: {}.", user.getUsername(), id);
+        if (!eRepository.existsById(id)) {
+            log.info("User {} requested to delete the employee with id: {}. NO DATA FOUND.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        log.debug("User {} requested to delete the employee with id: {}. BLOCKING EMPLOYEE", user.getUsername(), id);
+        eRepository.blockEmployeeById(id);
+        log.info("User {} requested to delete the employee with id: {}. EMPLOYEE BLOCKED.", user.getUsername(), id);
+        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    }
 }
