@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Slf4j
 @RestController
@@ -55,7 +54,7 @@ public class CustomerController {
     private CustomerDTO createHATEOAS(CustomerDTO customerDTO) {
         Link selfLink = linkTo(CustomerController.class).slash(String.valueOf(customerDTO.getId())).withSelfRel();
         customerDTO.add(selfLink);
-        Link collectionLink = linkTo(methodOn(CustomerController.class)).slash("").withRel("customers");
+        Link collectionLink = linkTo(CustomerController.class).withRel("customers");
         customerDTO.add(collectionLink);
         // Geolocation related field
         if (customerDTO.getGeolocationDTO() != null) {

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Slf4j
 @RestController
@@ -53,13 +52,13 @@ public class SupplierController {
         Link selfLink = linkTo(SupplierController.class).slash(String.valueOf(supplierDTO.getId())).withSelfRel();
         supplierDTO.add(selfLink);
 
-        Link collectionLink = linkTo(methodOn(SupplierController.class)).slash("").withRel("suppliers");
+        Link collectionLink = linkTo(SupplierController.class).withRel("suppliers");
         supplierDTO.add(collectionLink);
 
         // Geolocation field
         if (supplierDTO.getGeolocation() != null) {
             Long geoId = supplierDTO.getId();
-            Link geolocation = linkTo(methodOn(GeolocationController.class)).slash(geoId).withRel("geolocation");
+            Link geolocation = linkTo(GeolocationController.class).slash(geoId).withRel("geolocation");
             supplierDTO.add(geolocation);
         }
 

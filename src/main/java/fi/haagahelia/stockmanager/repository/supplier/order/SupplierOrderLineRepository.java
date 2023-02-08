@@ -13,4 +13,5 @@ public interface SupplierOrderLineRepository extends JpaRepository<SupplierOrder
     List<SupplierOrderLine> findBySupplierOrderId(Long id);
     Optional<SupplierOrderLine> findBySupplierOrderIdAndProductId(Long supplierOrderId, Long productId);
     void deleteBySupplierOrderIdAndProductId(Long supplierOrderId, Long productId);
+    Boolean existsByProductId(Long id);
 }

@@ -177,7 +177,7 @@ public class BrandController {
      *      If a product is related to this brand, it's not possible to delete the brand.
      *      We return an HttpStatus.NOT_ACCEPTABLE to the user.
      * Thirdly, we can delete the brand from the database.
-     * Finally, we return an HttpStatus.ACCEPTED to the user.
+     * Finally, we return to the user an HttpStatus.ACCEPTED.
      * @param id Corresponds to the id of the brand that the user wants to delete.
      * @param user Corresponds to the user that is authenticated.
      * @return Corresponds to a ResponseEntity that contains the HttpStatus.

@@ -3,6 +3,7 @@ package fi.haagahelia.stockmanager.dto.product;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import fi.haagahelia.stockmanager.dto.product.brand.BrandDTO;
 import fi.haagahelia.stockmanager.dto.product.category.CategoryDTO;
+import fi.haagahelia.stockmanager.dto.product.category.ProductDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.product.Product;
 import lombok.Builder;
@@ -13,7 +14,7 @@ import org.springframework.hateoas.RepresentationModel;
 @Builder
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ProductCompleteDTO extends RepresentationModel<ProductCompleteDTO> {
+public class ProductCompleteDTO extends ProductDTO {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */
 

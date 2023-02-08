@@ -13,4 +13,5 @@ public interface CustomerOrderLineRepository extends JpaRepository<CustomerOrder
     Optional<CustomerOrderLine> findByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);
     Boolean existsByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);
     void deleteByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);
+    Boolean existsByProductId(Long id);
 }

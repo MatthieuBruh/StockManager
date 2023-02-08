@@ -51,7 +51,7 @@ public class GeolocationController {
      */
     private GeolocationDTO createHATEOAS(GeolocationDTO geolocationDTO) {
         Link selfLink = linkTo(GeolocationController.class).slash(String.valueOf(geolocationDTO.getId())).withSelfRel();
-        Link collectionLink = linkTo(methodOn(GeolocationController.class)).slash("").withRel("geolocations");
+        Link collectionLink = linkTo(GeolocationController.class).withRel("geolocations");
         geolocationDTO.add(selfLink, collectionLink);
         return geolocationDTO;
     }

@@ -20,8 +20,7 @@ public class CustomerOrderCuDTO {
 
     /* -------------------------------------------------- RELATIONS ------------------------------------------------- */
 
-    private Long employeeId;
-
     private Long productId;
+    private Long customerId;
 
 }

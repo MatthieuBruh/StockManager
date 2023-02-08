@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Slf4j
 @RestController
@@ -49,7 +48,7 @@ public class CategoryController {
      */
     private CategoryDTO createHATEOAS(CategoryDTO cat) {
         Link selfLink = linkTo(CategoryController.class).slash(String.valueOf(cat.getId())).withSelfRel();
-        Link collectionlink = linkTo(methodOn(CategoryController.class)).slash("").withRel("categories");
+        Link collectionlink = linkTo(CategoryController.class).withRel("categories");
         cat.add(selfLink, collectionlink);
         return cat;
     }

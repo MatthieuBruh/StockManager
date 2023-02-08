@@ -14,10 +14,4 @@ public class CustomerOrderLineCuDTO {
     private Integer quantity;
     private Double sellPrice;
 
-    /* -------------------------------------------------- RELATIONS ------------------------------------------------- */
-
-    private Long customerOrderId;
-
-    private Long productId;
-
 }
