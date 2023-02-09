@@ -82,7 +82,7 @@ public class CustomerOrderController {
 
     /**
      * This function is used to convert a List of CustomerOrder into a List of CustomerOrderDTO.
-     * It also adds the HATEOAS links on each element of the lsit.
+     * It also adds the HATEOAS links on each element of the list.
      * @param customerOrders Corresponds to the list of CustomerOrder.
      * @return Corresponds to the list of CustomerOrderDTO.
      */
@@ -316,7 +316,7 @@ public class CustomerOrderController {
     /**
      * AVAILABLE FOR: ROLE_VENDOR | ROLE_MANAGER | ROLE_ADMIN
      * This function is used to delete a customer order by its id.
-     * Firstly, we check that a customer exists with the corresponding id.
+     * Firstly, we check that a customer order exists with the corresponding id.
      *      If not, we return an HttpStatus.NO_CONTENT to the user.
      * Secondly, we check that the age of the order is not more than three days old.
      *      If the order has been made more than 3 days ago, we return to the user an HttpStatus.NO_ACCEPTABLE.
@@ -333,7 +333,7 @@ public class CustomerOrderController {
         log.info("User {} is requesting to delete the customer order with id: {}.", user.getUsername(), id);
         Optional<CustomerOrder> customerOrderOptional = coRepository.findById(id);
         if (customerOrderOptional.isEmpty()) {
-            log.info("User {} requested to delete the customer order with id: {}. NO CUSTOMER ORDER.",
+            log.info("User {} requested to delete the customer order with id: {}. NO CUSTOMER ORDER FOUN.",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -362,7 +362,7 @@ public class CustomerOrderController {
      * @param user Corresponds to the authenticated user.
      * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
      */
-    @DeleteMapping(value = "/orders/{id}/froce", produces = "application/json")
+    @DeleteMapping(value = "/orders/{id}/force", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<CustomerOrderDTO> deleteOrderByIdForce(@PathVariable(value = "id") Long id,
                                                                                @AuthenticationPrincipal Employee user) {

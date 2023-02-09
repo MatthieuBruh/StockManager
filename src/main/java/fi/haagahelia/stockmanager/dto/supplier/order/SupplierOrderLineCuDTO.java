@@ -15,8 +15,4 @@ public class SupplierOrderLineCuDTO {
     private Double buyPrice;
 
     /* -------------------------------------------------- RELATIONS ------------------------------------------------- */
-
-    private Long supplierOrderId;
-
-    private Long productId;
 }

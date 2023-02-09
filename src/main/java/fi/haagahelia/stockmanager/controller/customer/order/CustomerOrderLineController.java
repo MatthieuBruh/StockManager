@@ -75,7 +75,7 @@ public class CustomerOrderLineController {
 
     /**
      * This function is used to convert a List of CustomerOrder into a List of CustomerOrderDTO.
-     * It also adds the HATEOAS links on each element of the lsit.
+     * It also adds the HATEOAS links on each element of the list.
      * @param orderLines Corresponds to the list of CustomerOrder.
      * @return Corresponds to the list of CustomerOrderDTO.
      */
@@ -123,8 +123,7 @@ public class CustomerOrderLineController {
                     user.getUsername(), orderId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        List<CustomerOrderLineDTO> cusOrderLinesDTOS = new ArrayList<>();
-
+        List<CustomerOrderLineDTO> cusOrderLinesDTOS = convertCustomerOrderLines(customerOrderLines);
         log.info("User {} requested the customer order's lines of the order: {}. RETURNING DATA.",
                 user.getUsername(), orderId);
         return new ResponseEntity<>(cusOrderLinesDTOS, HttpStatus.OK);
@@ -231,12 +230,12 @@ public class CustomerOrderLineController {
                             "ALREADY EXISTS.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
-        if (cusOrderLineDTO.getQuantity() < 1) {
+        if (cusOrderLineDTO.getQuantity() == null || cusOrderLineDTO.getQuantity() < 1) {
             log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
                     "INVALID QUANTITY", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        if (cusOrderLineDTO.getSellPrice() <= 0) {
+        if (cusOrderLineDTO.getSellPrice() == null || cusOrderLineDTO.getSellPrice() <= 0) {
             cusOrderLineDTO.setSellPrice(product.getSalePrice());
         }
         // --------------- CREATING ORDER LINE OBJECT ---------------
@@ -271,9 +270,9 @@ public class CustomerOrderLineController {
      */
     @DeleteMapping(value = "/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerOrderLine> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                           @PathVariable(value = "productId") Long productId,
-                                                                           @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<CustomerOrderLineDTO> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
+                                                                              @PathVariable(value = "productId") Long productId,
+                                                                              @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to delete the customer order line: orderId: {} ; productId: {}.",
                 user.getUsername(), orderId, productId);
         if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {
