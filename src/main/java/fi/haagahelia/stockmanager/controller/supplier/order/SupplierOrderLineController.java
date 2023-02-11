@@ -7,6 +7,7 @@ import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderLineDTO;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLine;
+import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLinePK;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
 import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderLineRepository;
@@ -23,13 +24,14 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/suppliers/orders/{orderId}")
+@RequestMapping("/api/suppliers/orders")
 public class SupplierOrderLineController {
 
     /* ----------------------------------------- REPOSITORIES & CONSTRUCTOR ----------------------------------------- */
@@ -58,14 +60,15 @@ public class SupplierOrderLineController {
         Long productId = lineDTO.getProductCompleteDTO().getId();
 
         Link selfRel = linkTo(SupplierOrderLineController.class)
-                .slash(orderId).slash("details").slash(productId).withSelfRel();
+                .slash("/" + orderId + "/details/product=" + productId).withSelfRel();
         lineDTO.add(selfRel);
+
 
         Link orderDetailsLink = linkTo(SupplierOrderLineController.class)
                 .slash(orderId).slash("details").withRel("order-details");
         lineDTO.add(orderDetailsLink);
 
-        Link orderLink = linkTo(SupplierOrderController.class).slash(orderId).withRel("order");
+        Link orderLink = linkTo(SupplierOrderController.class).slash("orders").slash(orderId).withRel("order");
         lineDTO.add(orderLink);
 
         Link productLink = linkTo(ProductController.class).slash(productId).withRel("product");
@@ -104,7 +107,7 @@ public class SupplierOrderLineController {
      * @param user Corresponds to the authenticated user.
      * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
      */
-    @GetMapping(value = "/details", produces = "application/json")
+    @GetMapping(value = "/{orderId}/details", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<List<SupplierOrderLineDTO>> getSupOrderLines(@PathVariable(value = "orderId") Long orderId,
                                                                                      @AuthenticationPrincipal Employee user) {
@@ -133,7 +136,7 @@ public class SupplierOrderLineController {
      * @param user Corresponds to the authenticated user.
      * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
      */
-    @GetMapping(value = "/details/product={productId}", produces = "application/json")
+    @GetMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<SupplierOrderLineDTO> getSupOrderLine(@PathVariable(value = "orderId") Long orderId,
                                                                               @PathVariable(value = "productId") Long productId,
@@ -171,7 +174,7 @@ public class SupplierOrderLineController {
      * @param user Corresponds to the authenticated user.
      * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
      */
-    @PostMapping(value = "/details/{productId}", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/{orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<SupplierOrderLineDTO> createOrderLine(@PathVariable(value = "orderId") Long orderId,
                                                                               @PathVariable(value = "productId") Long productId,
@@ -187,7 +190,7 @@ public class SupplierOrderLineController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         SupplierOrder supplierOrder = orderOptional.get();
-        if (supplierOrder.getOrderIsSent() || supplierOrder.getDeliveryDate().isAfter(LocalDate.now())) {
+        if (supplierOrder.getOrderIsSent() || supplierOrder.getDeliveryDate().isBefore(LocalDate.now())) {
             log.info("User {} requested to create a new supplier order line: orderId: {} ; productId: {}. " +
                     "ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
@@ -201,7 +204,7 @@ public class SupplierOrderLineController {
         }
         Product product = productOptional.get();
         // --------------- Others verifications ---------------
-        if (!product.getSupplier().equals(supplierOrder.getSupplier())) {
+        if (!Objects.equals(product.getSupplier().getId(), supplierOrder.getSupplier().getId())) {
             log.info("User {} requested to create a new supplier order line: orderId: {} ; productId: {}." +
                     "PRODUCT IS NOT SUPPLIED BY THIS SUPPLIER.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.UNPROCESSABLE_ENTITY);
@@ -223,6 +226,7 @@ public class SupplierOrderLineController {
         SupplierOrderLine supplierOrderLine = new SupplierOrderLine();
         supplierOrderLine.setSupplierOrder(supplierOrder);
         supplierOrderLine.setProduct(product);
+        supplierOrderLine.setSupplierOrderLinePK(new SupplierOrderLinePK(supplierOrder.getId(), product.getId()));
         supplierOrderLine.setQuantity(orderCuDTO.getQuantity());
         supplierOrderLine.setBuyPrice(orderCuDTO.getBuyPrice());
         // --------------- SAVING DATA ---------------
@@ -251,7 +255,7 @@ public class SupplierOrderLineController {
      * @param user Corresponds to the authenticated user.
      * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
      */
-    @DeleteMapping(value = "/details/product={productId}", produces = "application/json")
+    @DeleteMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<SupplierOrderLineDTO> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
                                                                            @PathVariable(value = "productId") Long productId,

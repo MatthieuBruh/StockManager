@@ -9,6 +9,10 @@ import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderRepository;
+import fi.haagahelia.stockmanager.service.supplier.SupplierOrderManagerImpl;
+import fi.haagahelia.stockmanager.service.supplier.error.ProductStockChangeException;
+import fi.haagahelia.stockmanager.service.supplier.error.SupplierOrderStateException;
+import fi.haagahelia.stockmanager.service.supplier.error.UnknownSupplierOrderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -35,11 +39,14 @@ public class SupplierOrderController {
 
     private final SupplierOrderRepository sOrderRepository;
     private final SupplierRepository sRepository;
+    private final SupplierOrderManagerImpl orderManager;
 
     @Autowired
-    public SupplierOrderController(SupplierOrderRepository sOrderRepository, SupplierRepository sRepository) {
+    public SupplierOrderController(SupplierOrderRepository sOrderRepository, SupplierRepository sRepository,
+                                   SupplierOrderManagerImpl orderManager) {
         this.sOrderRepository = sOrderRepository;
         this.sRepository = sRepository;
+        this.orderManager = orderManager;
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -287,14 +294,14 @@ public class SupplierOrderController {
         log.info("User {} is requesting to update the supplier order with id: {}.", user.getUsername(), id);
         Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
         if (orderOptional.isEmpty()) {
-            log.info("User {} requested to update the supplier order with id: {}. NO SUPPLIER FOUND",
-                    user.getUsername(), orderCuDTO.getDate());
+            log.info("User {} requested to update the supplier order with id: {}. NO SUPPLIER ORDER FOUND",
+                    user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         SupplierOrder supplierOrder = orderOptional.get();
         if (orderCuDTO.getOrderIsSent() != null) supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
         if (orderCuDTO.getDeliveryDate() != null) supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
-        if (orderCuDTO.getIsReceived() != null) supplierOrder.setReceived(orderCuDTO.getIsReceived());
+        // if (orderCuDTO.getIsReceived() != null) supplierOrder.setReceived(orderCuDTO.getIsReceived());
         log.debug("User {} requested to update the supplier order with id: {}. SAVING ORDER'S UPDATE.",
                 user.getUsername(), supplierOrder.getDate());
         SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
@@ -303,6 +310,70 @@ public class SupplierOrderController {
         log.info("User {} requested to update the supplier order with id: {}. RETURNING UPDATED ORDER.",
                 user.getUsername(), supplierOrder.getDate());
         return new ResponseEntity<>(supplierOrderDTO, HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
+     * This function is used to send an order to a supplier.
+     * We use the function sendOrderById provided by the SupplierOrderManagerImpl class.
+     * Depending on the Exception returned by sendOrderById, we return an appropriate HttpStatus.
+     * @param id Corresponds to the id of the supplier order to send.
+     * @param user Corresponds to the authenticated user.
+     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     */
+    @PutMapping(value = "/orders/{id}/send", produces = "application/json")
+    @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
+    public @ResponseBody ResponseEntity<SupplierOrderDTO> sendOrder(@PathVariable(value = "id") Long id,
+                                                                    @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to send the supplier order with id: {}.", user.getUsername(), id);
+        try {
+            SupplierOrder supplierOrder = orderManager.sendOrderById(id);
+            SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
+            createHATEOAS(convert);
+            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+        } catch (UnknownSupplierOrderException e) {
+            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
+                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (SupplierOrderStateException e) {
+            log.info("User {} requested to change the state of the supplier order with id: {}." +
+                    "ORDER IS ALREADY SENT.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+    }
+
+    /**
+     * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
+     * This function is used to notify that we received a supplier order.
+     * We use the function receiveOrderById provided by the SupplierOrderManagerImpl class.
+     * Depending on the Exception returned by receiveOrderById, we return an appropriate HttpStatus.
+     * @param id Corresponds to the id of the supplier order to send.
+     * @param user Corresponds to the authenticated user.
+     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     */
+    @PutMapping(value = "/orders/{id}/received", produces = "application/json")
+    @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
+    public @ResponseBody ResponseEntity<SupplierOrderDTO> receivedOrder(@PathVariable(value = "id") Long id,
+                                                                        @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to change the receive state of the supplier order with id: {}.", user.getUsername(), id);
+        try {
+            SupplierOrder supplierOrder = orderManager.receiveOrderById(id);
+            SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
+            createHATEOAS(convert);
+            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+        } catch (UnknownSupplierOrderException e) {
+            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
+                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (SupplierOrderStateException e) {
+            log.info("User {} requested to change the state of the supplier order with id: {}." +
+                    "ORDER IS NOT SENT OR ALREADY RECEIVED.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        } catch (ProductStockChangeException e) {
+            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
+                    e.getMessage(), user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

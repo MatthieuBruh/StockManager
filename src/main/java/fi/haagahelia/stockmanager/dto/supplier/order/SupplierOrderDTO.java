@@ -1,7 +1,6 @@
 package fi.haagahelia.stockmanager.dto.supplier.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import fi.haagahelia.stockmanager.dto.common.GeolocationDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import lombok.Builder;
@@ -43,6 +42,6 @@ public class SupplierOrderDTO extends RepresentationModel<SupplierOrderDTO> {
             supplierOrderDTOBuilder.supplierDTO(SupplierDTO.convert(supplierOrder.getSupplier()));
         }
 
-        return SupplierOrderDTO.builder().build();
+        return supplierOrderDTOBuilder.build();
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.hateoas.RepresentationModel;
 
 @Builder
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 public class SupplierOrderLineDTO extends RepresentationModel<SupplierOrderLineDTO> {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */
