@@ -1,16 +1,20 @@
 package fi.haagahelia.stockmanager.repository.supplier.order;
 
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
-import fi.haagahelia.stockmanager.service.supplier.error.ProductStockChangeException;
-import fi.haagahelia.stockmanager.service.supplier.error.SupplierOrderStateException;
-import fi.haagahelia.stockmanager.service.supplier.error.UnknownSupplierOrderException;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
+import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import jakarta.transaction.Transactional;
 
 public interface SupplierOrderManagerRepository {
     @Transactional
-    SupplierOrder sendOrderById(Long orderId) throws UnknownSupplierOrderException, SupplierOrderStateException;
+    SupplierOrder sendOrderById(Long orderId) throws UnknownOrderException, OrderStateException;
 
     @Transactional
     SupplierOrder receiveOrderById(Long orderId)
-            throws UnknownSupplierOrderException, ProductStockChangeException, SupplierOrderStateException;
+            throws UnknownOrderException, ProductStockException, OrderStateException;
+
+    @Transactional
+    SupplierOrder cancelReceiveOrder(Long orderId)
+            throws UnknownOrderException, ProductStockException, OrderStateException;
 }

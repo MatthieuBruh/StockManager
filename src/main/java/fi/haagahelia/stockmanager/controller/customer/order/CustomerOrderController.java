@@ -5,11 +5,15 @@ import fi.haagahelia.stockmanager.controller.customer.CustomerController;
 import fi.haagahelia.stockmanager.controller.user.EmployeeController;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderDTO;
+import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
+import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import fi.haagahelia.stockmanager.model.customer.Customer;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.customer.CustomerRepository;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
+import fi.haagahelia.stockmanager.service.order.CustomerOrderManagerImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -37,11 +41,14 @@ public class CustomerOrderController {
 
     private final CustomerRepository cRepository;
     private final CustomerOrderRepository coRepository;
+    private final CustomerOrderManagerImpl orderManager;
 
     @Autowired
-    public CustomerOrderController(CustomerRepository cRepository, CustomerOrderRepository coRepository) {
+    public CustomerOrderController(CustomerRepository cRepository, CustomerOrderRepository coRepository,
+                                   CustomerOrderManagerImpl orderManager) {
         this.cRepository = cRepository;
         this.coRepository = coRepository;
+        this.orderManager = orderManager;
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -281,7 +288,7 @@ public class CustomerOrderController {
      * Firstly, we verify that the customer order exists.
      *      If not, we return to the user an HttpStatus.NO_CONTENT.
      * Secondly, we get the order from the Optional object.
-     *      Then, we modify the delivery date and the isSent field if the user doesn't provide null value.
+     *      Then, we modify the delivery date field if the user doesn't provide null value.
      * Thirdly, we save the modification to the database, and we convert the saved object as a CustomerOrderDTO.
      * Finally, we return the modified data to the user with an HttpStatus.Ok.
      * @param id Corresponds to the id of the order to update.
@@ -303,7 +310,6 @@ public class CustomerOrderController {
         }
         CustomerOrder customerOrder = orderOptional.get();
         if (orderCuDTO.getDeliveryDate() != null) customerOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
-        if (orderCuDTO.getIsSent() != null) customerOrder.setSent(orderCuDTO.getIsSent());
         log.debug("User {} requested to update the customer order with id: {}. SAVING MODIFICATION.",
                 user.getUsername(), customerOrder.getId());
         CustomerOrder savedOrder = coRepository.save(customerOrder);
@@ -311,6 +317,75 @@ public class CustomerOrderController {
         log.info("User {} requested to update the customer order with id: {}. RETURNING DATA.",
                 user.getUsername(), savedOrder.getId());
         return new ResponseEntity<>(createHATEOAS(customerOrderDTO), HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * AVAILABLE FOR: ROLE_VENDOR | ROLE_MANAGER | ROLE_ADMIN
+     * This function is used to ship a customer order.
+     * We use the function customerOrderShipment provided by the CustomerOrderManagerImpl class.
+     * Depending on the Exception returned by customerOrderShipment, we return an appropriate HttpStatus.
+     * @param orderId Corresponds to the id of the order to update.
+     * @param user Corresponds to the authenticated user.
+     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     */
+    @PutMapping(value = "/orders/{id}/send", produces = "application/json")
+    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    public @ResponseBody ResponseEntity<CustomerOrderDTO> sendOrder(@PathVariable(value = "id") Long orderId,
+                                                                    @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to send the customer order with id: {}", user.getUsername(), orderId);
+        try {
+            CustomerOrder customerOrder = orderManager.customerOrderShipment(orderId);
+            CustomerOrderDTO convert = CustomerOrderDTO.convert(customerOrder);
+            createHATEOAS(convert);
+            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+        } catch (UnknownOrderException e) {
+            log.info("User {} requested to send the customer order with id: {}. NO CUSTOMER ORDER FOUND.",
+                    user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (ProductStockException e) {
+            log.info("User {} requested to send the customer order with id: {}. NOT ENOUGH STOCK.",
+                    user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        } catch (OrderStateException e) {
+            log.info("User {} requested to send the customer order with id: {}. ORDER IS ALREADY SENT.",
+                    user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
+    }
+
+    /**
+     * AVAILABLE FOR: ROLE_VENDOR | ROLE_MANAGER | ROLE_ADMIN
+     * This function is used to cancel the shipment of a customer order.
+     * We use the function customerOrderShipmentCancel provided by the CustomerOrderManagerImpl class.
+     * Depending on the Exception returned by customerOrderShipmentCancel, we return an appropriate HttpStatus.
+     * @param orderId Corresponds to the id of the order to update.
+     * @param user Corresponds to the authenticated user.
+     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     */
+    @PutMapping(value = "/orders/{id}/cancel-sending", produces = "application/json")
+    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    public @ResponseBody ResponseEntity<CustomerOrderDTO> cancelSendOrder(@PathVariable(value = "id") Long orderId,
+                                                                          @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to cancel the shipment of the customer order with id: {}", user.getUsername(), orderId);
+        try {
+            CustomerOrder customerOrder = orderManager.customerOrderShipmentCancel(orderId);
+            CustomerOrderDTO convert = CustomerOrderDTO.convert(customerOrder);
+            createHATEOAS(convert);
+            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+        } catch (UnknownOrderException e) {
+            log.info("User {} requested to cancel the shipment of the customer order with id: {}. NO CUSTOMER ORDER FOUND.",
+                    user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (OrderStateException e) {
+            log.info("User {} requested to cancel the shipment the customer order with id: {}. ORDER HAS NOT BEEN SENT.",
+                    user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        } catch (ProductStockException e) {
+            log.info("User {} requested to send the customer order with id: {}. {}.",
+                    user.getUsername(), orderId, e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
+
     }
 
     /**

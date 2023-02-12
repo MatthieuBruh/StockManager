@@ -9,10 +9,10 @@ import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderRepository;
-import fi.haagahelia.stockmanager.service.supplier.SupplierOrderManagerImpl;
-import fi.haagahelia.stockmanager.service.supplier.error.ProductStockChangeException;
-import fi.haagahelia.stockmanager.service.supplier.error.SupplierOrderStateException;
-import fi.haagahelia.stockmanager.service.supplier.error.UnknownSupplierOrderException;
+import fi.haagahelia.stockmanager.service.order.SupplierOrderManagerImpl;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
+import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -331,11 +331,11 @@ public class SupplierOrderController {
             SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
             createHATEOAS(convert);
             return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
-        } catch (UnknownSupplierOrderException e) {
+        } catch (UnknownOrderException e) {
             log.info("User {} requested to change the receive state of the supplier order with id: {}." +
                     "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (SupplierOrderStateException e) {
+        } catch (OrderStateException e) {
             log.info("User {} requested to change the state of the supplier order with id: {}." +
                     "ORDER IS ALREADY SENT.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.CONFLICT);
@@ -344,7 +344,7 @@ public class SupplierOrderController {
 
     /**
      * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
-     * This function is used to notify that we received a supplier order.
+     * This function is used to considerate a supplier order as received.
      * We use the function receiveOrderById provided by the SupplierOrderManagerImpl class.
      * Depending on the Exception returned by receiveOrderById, we return an appropriate HttpStatus.
      * @param id Corresponds to the id of the supplier order to send.
@@ -361,18 +361,52 @@ public class SupplierOrderController {
             SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
             createHATEOAS(convert);
             return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
-        } catch (UnknownSupplierOrderException e) {
+        } catch (UnknownOrderException e) {
             log.info("User {} requested to change the receive state of the supplier order with id: {}." +
                     "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (SupplierOrderStateException e) {
+        } catch (OrderStateException e) {
             log.info("User {} requested to change the state of the supplier order with id: {}." +
                     "ORDER IS NOT SENT OR ALREADY RECEIVED.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.CONFLICT);
-        } catch (ProductStockChangeException e) {
+        } catch (ProductStockException e) {
             log.info("User {} requested to change the receive state of the supplier order with id: {}." +
                     e.getMessage(), user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        }
+    }
+
+    /**
+     * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
+     * This function is used to cancel the reception of a supplier order.
+     * We use the function cancelReceiveOrder provided by the SupplierOrderManagerImpl class.
+     * Depending on the Exception returned by cancelReceiveOrder, we return an appropriate HttpStatus.
+     * @param id Corresponds to the id of the supplier order to send.
+     * @param user Corresponds to the authenticated user.
+     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     */
+    @PutMapping(value = "/orders/{id}/cancel-reception", produces = "application/json")
+    @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
+    public @ResponseBody ResponseEntity<SupplierOrderDTO> cancelReceivedOrder(@PathVariable(value = "id") Long id,
+                                                                              @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to change the receive state (not received) of the supplier order with id: {}.",
+                user.getUsername(), id);
+        try {
+            SupplierOrder supplierOrder = orderManager.cancelReceiveOrder(id);
+            SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
+            createHATEOAS(convert);
+            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+        } catch (UnknownOrderException e) {
+            log.info("User {} requested to cancel the reception of the supplier order with id: {}." +
+                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (ProductStockException e) {
+            log.info("User {} requested: " + e.getMessage(), user.getUsername());
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        } catch (OrderStateException e) {
+            log.info("User {} requested to cancel a supplier order that is not received, order id: {}",
+                    user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
         }
     }
 
