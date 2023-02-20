@@ -144,7 +144,7 @@ public class SupplierOrderLineController {
         log.info("User {} is requesting the the line: supOrderId: {}, productId: {}.",
                 user.getUsername(), orderId, productId);
         Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
-        if (orderLineOptional.isEmpty()) {
+        if (!orderLineOptional.isPresent()) {
             log.info("User {} requested the the line: supOrderId: {}, productId: {}. NO DATA FOUND.",
                     user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -184,7 +184,7 @@ public class SupplierOrderLineController {
                 user.getUsername(), orderId, productId);
         // --------------- Order verifications ---------------
         Optional<SupplierOrder> orderOptional = soRepository.findById(orderId);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested to create a new supplier order line: orderId: {} ; productId: {}." +
                     "ORDER NOT FOUND.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -197,7 +197,7 @@ public class SupplierOrderLineController {
         }
         // --------------- Product verifications ---------------
         Optional<Product> productOptional = pRepository.findById(productId);
-        if (productOptional.isEmpty()) {
+        if (!productOptional.isPresent()) {
             log.info("User {} requested to create a new supplier order line: orderId: {} ; productId: {}." +
                     "PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -263,7 +263,7 @@ public class SupplierOrderLineController {
         log.info("User {} is requesting to delete the order line: supOrderId: {}, productId: {}.",
                 user.getUsername(), orderId, productId);
         Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
-        if (orderLineOptional.isEmpty()) {
+        if (!orderLineOptional.isPresent()) {
             log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. NO DATA FOUND.",
                     user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

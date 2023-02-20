@@ -170,7 +170,7 @@ public class CustomerController {
                                                                      @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the customer with email: {}.", user.getUsername(), email);
         Optional<Customer> customerOptional = cRepository.findByEmail(email);
-        if (customerOptional.isEmpty()) {
+        if (!customerOptional.isPresent()) {
             log.info("User {} requested the customer with email: {}. NO DATA FOUND.", user.getUsername(), email);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -241,7 +241,7 @@ public class CustomerController {
                                                                         @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to update the customer with email: '{}'.", user.getUsername(), email);
         Optional<Customer> customerOptional = cRepository.findByEmail(email);
-        if (customerOptional.isEmpty()) {
+        if (!customerOptional.isPresent()) {
             log.info("User {} requested to update the customer with email: '{}'. NO CUSTOMER FOUND.",
                     user.getUsername(), email);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -281,7 +281,7 @@ public class CustomerController {
                                                                         @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);
         Optional<Customer> customer = cRepository.findByEmail(email);
-        if (customer.isEmpty()) {
+        if (!customer.isPresent()) {
             log.info("User {} requested to delete the customer with email: '{}'. NO DATA FOUND",
                     user.getUsername(), email);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

@@ -116,7 +116,7 @@ public class RoleController {
                                                              @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to get the role with id: {}.", user.getUsername(), id);
         Optional<Role> roleOptional = rRepository.findById(id);
-        if (roleOptional.isEmpty()) {
+        if (!roleOptional.isPresent()) {
             log.info("User {} requested the role with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -183,7 +183,7 @@ public class RoleController {
                                                             @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to update the role with id: {}.", user.getUsername(), id);
         Optional<Role> roleOptional = rRepository.findById(id);
-        if (roleOptional.isEmpty()) {
+        if (!roleOptional.isPresent()) {
             log.info("User {} requested to update the role with id: {}. NO DATA FOUND", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

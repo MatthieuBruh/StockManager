@@ -122,7 +122,7 @@ public class CategoryController {
                                                                   @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the category with id: '{}'", user.getUsername(), id);
         Optional<Category> categoryOptional = cRepository.findById(id);
-        if (categoryOptional.isEmpty()) {
+        if (!categoryOptional.isPresent()) {
             log.info("User {} requested the category with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -194,7 +194,7 @@ public class CategoryController {
                                                                     @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to update the category with the id: '{}'.", user.getUsername(), id);
         Optional<Category> categoryOptional = cRepository.findById(id);
-        if (categoryOptional.isEmpty()) {
+        if (!categoryOptional.isPresent()) {
             log.info("User {} requested to update the category with the id: '{}'. NO DATA FOUND",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

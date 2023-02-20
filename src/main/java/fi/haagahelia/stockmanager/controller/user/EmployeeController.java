@@ -149,7 +149,7 @@ public class EmployeeController {
                                                                      @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to get the employee with id: {}.", user.getUsername(), id);
         Optional<Employee> employeeOptional = eRepository.findById(id);
-        if (employeeOptional.isEmpty()) {
+        if (!employeeOptional.isPresent()) {
             log.info("User {} requested to get the employee with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -194,7 +194,7 @@ public class EmployeeController {
         employee.setActive(false);
         employee.setBlocked(true);
         Optional<Role> roleOptional = rRepository.findByName("ROLE_VENDOR");
-        if (roleOptional.isEmpty()) {
+        if (!roleOptional.isPresent()) {
             log.info("User {} requested to create a new employee with email: '{}'. DEFAULT ROLE NOT FOUND.",
                     user.getUsername(), employee.getEmail());
         }
@@ -231,7 +231,7 @@ public class EmployeeController {
                                                       @AuthenticationPrincipal Employee user) {
         log.info("User {} requested to update the employee with id: {}", "AUTH IS NOT SET", id);
         Optional<Employee> employeeOptional = eRepository.findById(id);
-        if (employeeOptional.isEmpty()) {
+        if (!employeeOptional.isPresent()) {
             log.info("User {} requested to update the employee with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -275,7 +275,7 @@ public class EmployeeController {
                                                         @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to activate the employee with id: {}.", user.getUsername(), id);
         Optional<Employee> employeeOptional = eRepository.findById(id);
-        if (employeeOptional.isEmpty()) {
+        if (!employeeOptional.isPresent()) {
             log.info("User {} requested to activate the employee with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -311,7 +311,7 @@ public class EmployeeController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         log.debug("User {} requested to delete the employee with id: {}. BLOCKING EMPLOYEE", user.getUsername(), id);
-        eRepository.blockEmployeeById(id);
+        eRepository.deactivateEmployeeById(id);
         log.info("User {} requested to delete the employee with id: {}. EMPLOYEE BLOCKED.", user.getUsername(), id);
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }

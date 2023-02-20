@@ -217,7 +217,7 @@ public class ProductController {
                                                                          @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the product with id: {}.", user.getUsername(), id);
         Optional<Product> productOptional = pRepository.findById(id);
-        if (productOptional.isEmpty()) {
+        if (!productOptional.isPresent()) {
             log.info("User {} requested the product with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -244,7 +244,7 @@ public class ProductController {
                                                                                @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the detailed product with id: {}.", user.getUsername(), id);
         Optional<Product> productOptional = pRepository.findById(id);
-        if (productOptional.isEmpty()) {
+        if (!productOptional.isPresent()) {
             log.info("User {} requested the detailed product with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

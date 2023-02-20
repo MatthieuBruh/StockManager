@@ -161,7 +161,7 @@ public class CustomerOrderLineController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         Optional<CustomerOrderLine> orderLine = lineRepository.findByCustomerOrderIdAndProductId(orderId, productId);
-        if (orderLine.isEmpty()) {
+        if (!orderLine.isPresent()) {
             log.info("User {} requested the customer order line: orderId: {} ; productId: {}. NO ORDER LINE FOUND.",
                     user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -200,7 +200,7 @@ public class CustomerOrderLineController {
                 user.getUsername(), orderId, productId);
         // --------------- Order verification ---------------
         Optional<CustomerOrder> orderOptional = coRepository.findById(orderId);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
                             "ORDER NOT FOUND.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -213,7 +213,7 @@ public class CustomerOrderLineController {
         }
         // --------------- Product verification ---------------
         Optional<Product> productOptional = pRepository.findById(productId);
-        if (productOptional.isEmpty()) {
+        if (!productOptional.isPresent()) {
             log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
                             "PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

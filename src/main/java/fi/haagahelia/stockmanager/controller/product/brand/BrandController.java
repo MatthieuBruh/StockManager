@@ -121,7 +121,7 @@ public class BrandController {
                                                                @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the brand with id {}", user.getUsername(), id);
         Optional<Brand> brandOptional = bRepository.findById(id);
-        if (brandOptional.isEmpty()) {
+        if (!brandOptional.isPresent()) {
             log.info("User {} requested the brand with id {}. NO DATA FOUND", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

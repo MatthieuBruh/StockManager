@@ -161,7 +161,7 @@ public class CustomerOrderController {
                                                                                @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the customer order with id: {}", user.getUsername(), id);
         Optional<CustomerOrder> orderOptional = coRepository.findById(id);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested the customer order with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -303,7 +303,7 @@ public class CustomerOrderController {
                                                                       @RequestBody CustomerOrderCuDTO orderCuDTO) {
         log.info("User {} is requesting to update the customer order with id: {}.", user.getUsername(), id);
         Optional<CustomerOrder> orderOptional = coRepository.findById(id);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested to update the customer order with id: {}. NO CUSTOMER ORDER FOUND.",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -407,7 +407,7 @@ public class CustomerOrderController {
                                                                           @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to delete the customer order with id: {}.", user.getUsername(), id);
         Optional<CustomerOrder> customerOrderOptional = coRepository.findById(id);
-        if (customerOrderOptional.isEmpty()) {
+        if (!customerOrderOptional.isPresent()) {
             log.info("User {} requested to delete the customer order with id: {}. NO CUSTOMER ORDER FOUN.",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

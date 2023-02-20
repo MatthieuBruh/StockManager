@@ -159,7 +159,7 @@ public class SupplierController {
                                                                      @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the supplier with id: {}.", user.getUsername(), id);
         Optional<Supplier> supplierOptional = sRepository.findById(id);
-        if (supplierOptional.isEmpty()) {
+        if (!supplierOptional.isPresent()) {
             log.info("User {} requested the supplier with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -232,7 +232,7 @@ public class SupplierController {
                                                                     @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to update the supplier with name: '{}'.", user.getUsername(), name);
         Optional<Supplier> optionalSupplier = sRepository.findByName(name);
-        if (optionalSupplier.isEmpty()) {
+        if (!optionalSupplier.isPresent()) {
             log.info("User {} requested to update the supplier with name: '{}'. NO DATA FOUND", user.getUsername(), name);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

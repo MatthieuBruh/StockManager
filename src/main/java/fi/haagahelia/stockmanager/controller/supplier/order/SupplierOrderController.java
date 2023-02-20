@@ -135,7 +135,7 @@ public class SupplierOrderController {
                                                                                @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting the supplier order with id: {}", user.getUsername(), id);
         Optional<SupplierOrder> supOrderOptional = sOrderRepository.findById(id);
-        if (supOrderOptional.isEmpty()) {
+        if (!supOrderOptional.isPresent()) {
             log.info("User {} requested the supplier order with id: {}. NO DATA FOUND.", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -250,7 +250,7 @@ public class SupplierOrderController {
             return new ResponseEntity<>(orderValidation.getFirst());
         }
         Optional<Supplier> supplierOptional = sRepository.findById(orderCuDTO.getSupplierId());
-        if (supplierOptional.isEmpty()) {
+        if (!supplierOptional.isPresent()) {
             log.info("User {} requested to create a new supplier order, date: {}. NO SUPPLIER FOUND",
                     user.getUsername(), orderCuDTO.getDate());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -293,7 +293,7 @@ public class SupplierOrderController {
                                                                          @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to update the supplier order with id: {}.", user.getUsername(), id);
         Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested to update the supplier order with id: {}. NO SUPPLIER ORDER FOUND",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -428,7 +428,7 @@ public class SupplierOrderController {
                                                                          @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to delete the supplier order with id: {}.", user.getUsername(), id);
         Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-        if (orderOptional.isEmpty()) {
+        if (!orderOptional.isPresent()) {
             log.info("User {} requested to delete the supplier order with id: {}. NO SUPPLIER ORDER FOUND.",
                     user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

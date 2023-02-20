@@ -6,10 +6,13 @@ import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
 import fi.haagahelia.stockmanager.repository.user.RoleRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
@@ -19,10 +22,11 @@ public class StockManagerApplication {
         SpringApplication.run(StockManagerApplication.class, args);
     }
 
+    /*
     @Bean
     CommandLineRunner commandLineRunner(RoleRepository rRepository, EmployeeRepository eRepository) {
         return args -> {
-            /*
+
             Role admin = new Role("Admin", "For the admins"); rRepository.save(admin);
             Role manager = new Role("Manager", "For the managers");  rRepository.save(manager);
             Role vendor = new Role("Vendors", "For the vendors"); rRepository.save(vendor);
@@ -30,7 +34,8 @@ public class StockManagerApplication {
             Employee main = new Employee("main@haaga.fi", "main", "Main", "Haaga",
                     new BCryptPasswordEncoder().encode("A1234"), true, false);
             eRepository.save(main);
-            main.setRoles(List.of(admin));
+            List<Role> roles = new ArrayList<>(); roles.add(admin);
+            main.setRoles(roles);
             eRepository.save(main);
 
 
@@ -41,8 +46,9 @@ public class StockManagerApplication {
             Employee ven = new Employee("ven@haaga.fi", "ven", "Ven", "Haaga",
                     new BCryptPasswordEncoder().encode("A1234"), true, false);
             eRepository.save(ven);
-            */
+
         };
     }
+    */
 
 }
