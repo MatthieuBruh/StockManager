@@ -2,17 +2,27 @@ package fi.haagahelia.stockmanager.controller.supplier;
 
 
 import fi.haagahelia.stockmanager.controller.common.GeolocationController;
+import fi.haagahelia.stockmanager.dto.common.BodyMessage;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.common.GeolocationRepository;
+import fi.haagahelia.stockmanager.repository.product.ProductRepository;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.util.Pair;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,11 +44,13 @@ public class SupplierController {
 
     private final SupplierRepository sRepository;
     private final GeolocationRepository gRepository;
+    private final ProductRepository pRepository;
 
     @Autowired
-    public SupplierController(SupplierRepository sRepository, GeolocationRepository gRepository) {
+    public SupplierController(SupplierRepository sRepository, GeolocationRepository gRepository, ProductRepository pRepository) {
         this.sRepository = sRepository;
         this.gRepository = gRepository;
+        this.pRepository = pRepository;
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -73,21 +85,21 @@ public class SupplierController {
      *      - In case of a creation: name should not exist
      *      - In case of an update: name should exist
      * @param supplierCuDTO Corresponds to the supplier's information to validate
-     * @param isForUpdate Used to know if we check value for a update or a creation.
+     * @param isForUpdate Used to know if we check value for an update or a creation.
      * @return A Pair object that contains an HttpStatus and the decision reason.
      */
     private Pair<HttpStatus, String> validateSupplier(SupplierCuDTO supplierCuDTO, boolean isForUpdate) {
-        if (supplierCuDTO.getName() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "NAME IS NULL");
-        if (supplierCuDTO.getName().length() < 1) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "NAME IS EMPTY");
+        if (supplierCuDTO.getName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_NAME_NULL");
+        if (supplierCuDTO.getName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_NAME_EMPTY");
         if (supplierCuDTO.getGeolocationId() != null) {
             if (!gRepository.existsById(supplierCuDTO.getGeolocationId())) {
-                return Pair.of(HttpStatus.NOT_FOUND, "NO GEOLOCATION FOUND");
+                return Pair.of(HttpStatus.NOT_FOUND, "SUPPLIER_GEOLOCATION_NOT_FOUND");
             }
         }
         if (isForUpdate) {
-            if (!sRepository.existsByName(supplierCuDTO.getName())) return Pair.of(HttpStatus.NOT_FOUND, "NOT FOUND");
+            if (!sRepository.existsByName(supplierCuDTO.getName())) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_NOT_FOUND");
         } else {
-            if (sRepository.existsByName(supplierCuDTO.getName())) return Pair.of(HttpStatus.CONFLICT, "ALREADY EXISTS");
+            if (sRepository.existsByName(supplierCuDTO.getName())) return Pair.of(HttpStatus.CONFLICT, "SUPPLIER_ALREADY_EXISTS");
         }
         return Pair.of(HttpStatus.ACCEPTED, "");
     }
@@ -114,32 +126,57 @@ public class SupplierController {
 
     /**
      * Available for: ROLE_MANAGER | ROLE_ADMIN
-     * This function is used to get all the suppliers that are saved in the database.
-     * Firstly, we will SELECT all the suppliers that are in the database.
-     * Secondly, we check that the list is not empty.
-     * If the list is empty, we return an empty ResponseEntity with an HttpStatus.NO_CONTENT.
-     * If the list contains at least one object, we can do the third step.
-     * Thirdly, we transform all the suppliers as a SupplierDTO objects. We also add the HATEOAS links.
-     * Finally, we return the data in a ResponseEntity with the HttpStatus.OK.
-     * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * This function is used to find all the suppliers.
+     * Firstly, database query through the supplier repository.
+     * Secondly, verification of the returned page is not empty.
+     *      --> If is empty: returns an HttpStatus.NO_CONTENT to the user.
+     * Thirdly, converting each Supplier object into a SupplierDTO one and adding HATEOAS links.
+     * Fourthly, updating the PageModel of SupplierDTO.
+     * Finally, return the PageModel of Supplier object with HttpStatus.OK.
+     *
+     * @param user authenticated Employee object
+     * @param searchQuery the search query, which can be null or an empty string
+     * @param pageable pagination information (page number, size, and sorting)
+     * @param sort sorting information for the query
+     * @return a ResponseEntity containing a page model of SupplierDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one supplier has been found. (Page of SupplierDTO)
+     *      --> HttpStatus.NO_CONTENT if no supplier exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<List<SupplierDTO>> getAllSuppliers(@AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting all the suppliers from the database.", user.getUsername());
-        List<Supplier> suppliers = sRepository.findAll();
-        if (suppliers.size() < 1) {
-            log.info("User {} requested all the suppliers. NO DATA FOUND.", user.getUsername());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getSuppliers(@AuthenticationPrincipal Employee user,
+                                                        @RequestParam(required = false) String searchQuery,
+                                                        @PageableDefault(size = 10) Pageable pageable,
+                                                        @SortDefault.SortDefaults({
+                                                                @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting all the suppliers from the database.", user.getUsername());
+            Specification<Supplier> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Page<Supplier> suppliers = sRepository.findAll(spec, pageable);
+            if (suppliers.getSize() < 1) {
+                log.info("User {} requested all the suppliers. NO DATA FOUND.", user.getUsername());
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            List<SupplierDTO> supplierDTOS = new ArrayList<>();
+            for (Supplier supplier : suppliers) {
+                SupplierDTO supplierDTO = SupplierDTO.convert(supplier);
+                supplierDTOS.add(createHATEOAS(supplierDTO));
+            }
+            PagedModel.PageMetadata pmd = new PagedModel.PageMetadata(suppliers.getSize(), suppliers.getNumber(), suppliers.getTotalElements());
+            PagedModel<SupplierDTO> supplierDTOPage = PagedModel.of(supplierDTOS, pmd);
+            supplierDTOPage.add(linkTo(SupplierController.class).withRel("suppliers"));
+            log.info("User {} requested all the suppliers. RETURNING DATA.", user.getUsername());
+            return new ResponseEntity<>(supplierDTOPage, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested all the suppliers. UNEXPECTED ERROR!", user.getUsername());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<SupplierDTO> supplierDTOS = new ArrayList<>();
-        for (Supplier supplier : suppliers) {
-            SupplierDTO supplierDTO = SupplierDTO.convert(supplier);
-            supplierDTOS.add(createHATEOAS(supplierDTO));
-        }
-        log.info("User {} requested all the suppliers. RETURNING DATA.", user.getUsername());
-        return new ResponseEntity<>(supplierDTOS, HttpStatus.OK);
     }
 
     /**
@@ -149,24 +186,33 @@ public class SupplierController {
      * Secondly, we verify that data is not empty. If data is empty, we return a HttpStatus.NO_CONTENT.
      * Thirdly we transform the supplier as a SupplierDTO object, and we add the HATEOAS links to the object.
      * Finally, if everything went OK, we return the data to the user with a HttpStatus.OK.
+     *
      * @param id Correspond to the id of the supplier searched by the user.
      * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a SupplierDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the supplier exists. (SupplierDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier corresponds to the id. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierDTO> getSupplierByID(@PathVariable(value = "id") Long id,
-                                                                     @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting the supplier with id: {}.", user.getUsername(), id);
-        Optional<Supplier> supplierOptional = sRepository.findById(id);
-        if (!supplierOptional.isPresent()) {
-            log.info("User {} requested the supplier with id: {}. NO DATA FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getSupplierByID(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting the supplier with id: '{}'.", user.getUsername(), id);
+            Optional<Supplier> supplierOptional = sRepository.findById(id);
+            if (!supplierOptional.isPresent()) {
+                log.info("User {} requested the supplier with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            SupplierDTO supplierDTO = SupplierDTO.convert(supplierOptional.get());
+            createHATEOAS(supplierDTO);
+            log.info("User {} requested the supplier with id: '{}'. RETURNING DATA.", user.getUsername(), id);
+            return new ResponseEntity<>(supplierDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the supplier with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        SupplierDTO supplierDTO = SupplierDTO.convert(supplierOptional.get());
-        createHATEOAS(supplierDTO);
-        log.info("User {} requested the supplier with id: {}. RETURNING DATA.", user.getUsername(), id);
-        return new ResponseEntity<>(supplierDTO, HttpStatus.OK);
     }
 
     /**
@@ -177,40 +223,46 @@ public class SupplierController {
      *      If not, we return an HttpStatus with the corresponding code.
      * Thirdly, we can create the supplier object and save it in the database.
      * Finally, we convert the saved supplier as a SupplierDTO and we return it to the user with an HttpStatus.CREATED.
+     *
      * @param supplierCuDTO Corresponds to the new supplier that the user wants to create.
      * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a SupplierDTO objects or a Error Message.
+     *      --> HttpStatus.CREATED if the supplier has been created. (SupplierDTO)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierDTO> createNewSupplier(@RequestBody SupplierCuDTO supplierCuDTO,
-                                                                       @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to create and save a new supplier with name: {}",
-                user.getUsername(), supplierCuDTO.getName());
-        Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, false);
-        if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
-            log.info("User {} requested to create and save a new supplier with the name: {}. {}",
-                    user.getUsername(), supplierCuDTO.getName(), validation.getSecond());
-            return new ResponseEntity<>(validation.getFirst());
+    public @ResponseBody ResponseEntity<?> createNewSupplier(@RequestBody SupplierCuDTO supplierCuDTO,  @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to create and save a new supplier with name: '{}'.", user.getUsername(), supplierCuDTO.getName());
+            Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, false);
+            if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
+                log.info("User {} requested to create and save a new supplier with the name: '{}'. '{}'",
+                        user.getUsername(), supplierCuDTO.getName(), validation.getSecond());
+                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                return new ResponseEntity<>(bm, validation.getFirst());
+            }
+            Supplier supplier = new Supplier();
+            supplier.setName(supplierCuDTO.getName());
+            supplier.setEmail(supplierCuDTO.getEmail());
+            supplier.setPhoneNumber(supplierCuDTO.getPhoneNumber());
+            setGeolocationById(supplier, supplierCuDTO.getGeolocationId(), user.getUsername());
+            log.debug("User {} requested to create and save a new supplier with the name: '{}'. SAVING SUPPLIER.", user.getUsername(), supplier.getName());
+            Supplier savedSupplier = sRepository.save(supplier);
+            SupplierDTO supplierDTO = SupplierDTO.convert(savedSupplier);
+            createHATEOAS(supplierDTO);
+            log.info("User {} requested to create and save a new supplier with the name: '{}'. SUPPLIER CREATED AND SAVED.", user.getUsername(), supplier.getName());
+            return new ResponseEntity<>(supplierDTO, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.info("User {} requested to create and save a new supplier. UNEXPECTED ERROR!", user.getUsername());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Supplier supplier = new Supplier();
-        supplier.setName(supplierCuDTO.getName());
-        supplier.setEmail(supplierCuDTO.getEmail());
-        supplier.setPhoneNumber(supplierCuDTO.getPhoneNumber());
-        setGeolocationById(supplier, supplierCuDTO.getGeolocationId(), user.getUsername());
-        log.debug("User {} requested to create and save a new supplier with the name: {}. SAVING SUPPLIER.",
-                user.getUsername(), supplier.getName());
-        Supplier savedSupplier = sRepository.save(supplier);
-        SupplierDTO supplierDTO = SupplierDTO.convert(savedSupplier);
-        createHATEOAS(supplierDTO);
-        log.info("User {} requested to create and save a new supplier with the name: {}. SUPPLIER CREATED AND SAVED.",
-                user.getUsername(), supplier.getName());
-        return new ResponseEntity<>(supplierDTO, HttpStatus.CREATED);
     }
 
     /**
      * Available for: ROLE_MANAGER | ROLE_ADMIN
-     * This function is used to update an existing supplier by his name.
+     * This function is used to update an existing supplier by his id.
      * Firstly, we get the updated supplierCuDTO in the RequestBody.
      * Secondly, we check that a supplier exists with the given name.
      *      If any supplier correspond to the given id, we return an HttpStatus.NO_CONTENT.
@@ -219,39 +271,50 @@ public class SupplierController {
      * Fourthly, we can change the value of the supplier.
      * Fifthly, we can save the modification in the database.
      * Finally, we convert the saved supplier as a SupplierDTO, we also add the HATEOAS links, and we return it the
-     * user with an HttpStatus.ACCEPTED.
-     * @param name Correspond to the supplier's name in the database that we want to update
+     * user with an HttpStatus.OK.
+     *
+     * @param id Correspond to the supplier's id in the database that we want to update
      * @param supplierCuDTO Correspond to the user's new data.
      * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a SupplierDTO objects or a Error Message.
+     *      --> HttpStatus.CREATED if the supplier has been created. (SupplierDTO)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @PutMapping(value = "/{name}", consumes = "application/json", produces = "application/json")
+    @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierDTO> updateSupplier(@PathVariable(value = "name") String name,
-                                                                    @RequestBody SupplierCuDTO supplierCuDTO,
-                                                                    @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to update the supplier with name: '{}'.", user.getUsername(), name);
-        Optional<Supplier> optionalSupplier = sRepository.findByName(name);
-        if (!optionalSupplier.isPresent()) {
-            log.info("User {} requested to update the supplier with name: '{}'. NO DATA FOUND", user.getUsername(), name);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> updateSupplier(@PathVariable(value = "id") Long id,
+                                                          @RequestBody SupplierCuDTO supplierCuDTO,
+                                                          @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to update the supplier with name: '{}'.", user.getUsername(), id);
+            Optional<Supplier> optionalSupplier = sRepository.findById(id);
+            if (!optionalSupplier.isPresent()) {
+                log.info("User {} requested to update the supplier with name: '{}'. NO DATA FOUND", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, true);
+            if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
+                log.info("User {} requested to update the supplier with name: '{}'. {}", user.getUsername(), id, validation.getSecond());
+                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                return new ResponseEntity<>(bm, validation.getFirst());
+            }
+            Supplier supplier = optionalSupplier.get();
+            supplier.setName(supplierCuDTO.getName());
+            supplier.setEmail(supplierCuDTO.getEmail());
+            supplier.setPhoneNumber(supplierCuDTO.getPhoneNumber());
+            setGeolocationById(supplier, supplierCuDTO.getGeolocationId(), user.getUsername());
+            log.debug("User {} requested to update the supplier with the id: '{}'. SAVING SUPPLIER.", user.getUsername(), id);
+            Supplier savedSupplier = sRepository.save(supplier);
+            SupplierDTO supplierDTO = SupplierDTO.convert(savedSupplier);
+            log.info("User {} requested to update the supplier with the id: '{}'. SUPPLIER SAVED.", user.getUsername(), id);
+            return new ResponseEntity<>(createHATEOAS(supplierDTO), HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to update the supplier with the name: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, true);
-        if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
-            log.info("User {} requested to update the supplier with name: '{}'. {}",
-                    user.getUsername(), name,validation.getSecond());
-            return new ResponseEntity<>(validation.getFirst());
-        }
-        Supplier supplier = optionalSupplier.get();
-        supplier.setName(supplierCuDTO.getName());
-        supplier.setEmail(supplierCuDTO.getEmail());
-        supplier.setPhoneNumber(supplierCuDTO.getPhoneNumber());
-        setGeolocationById(supplier, supplierCuDTO.getGeolocationId(), user.getUsername());
-        log.debug("User {} requested to update the supplier with the id: {}. SAVING SUPPLIER.", user.getUsername(), name);
-        Supplier savedSupplier = sRepository.save(supplier);
-        SupplierDTO supplierDTO = SupplierDTO.convert(savedSupplier);
-        log.info("User {} requested to update the supplier with the id: {}. SUPPLIER SAVED.", user.getUsername(), name);
-        return new ResponseEntity<>(createHATEOAS(supplierDTO), HttpStatus.ACCEPTED);
+
     }
 
 
@@ -260,23 +323,39 @@ public class SupplierController {
      * This function is used to delete a supplier. /!\ DELETE THE RELATED ORDERS AND ORDER LINES
      * Firstly, we check that a supplier exists with the given id.
      *      If not, we return an HttpStatus.NO_CONTENT to the user.
-     * Finally, we can delete the supplier from the database, and we return an HttpStatus.ACCEPTED to the user.
+     * Finally, we can delete the supplier from the database, and we return an HttpStatus.OK.
+     *
      * @param id Corresponds to the supplier's id that the user wants to delete.
      * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing an Error Message.
+     *      --> HttpStatus.OK if the supplier has been deleted.
+     *      --> HttpStatus.BAD_REQUEST if no supplier corresponds to the given id.
+     *      --> HttpStatus.CONFLICT if the supplier has at least one relationship.
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<SupplierDTO> deleteSupplierById(@PathVariable(value = "id") Long id,
-                                                                        @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to delete the supplier with id: {}.", user.getUsername(), id);
-        if (!sRepository.existsById(id)) {
-            log.info("User {} requested to delete the supplier with id: {}. NO DATA FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<BodyMessage> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to delete the supplier with id: '{}'.", user.getUsername(), id);
+            if (!sRepository.existsById(id)) {
+                log.info("User {} requested to delete the supplier with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            if (pRepository.existsBySupplierId(id)) {
+                log.info("User {} requested to delete the supplier with id: '{}'. PRODUCTS RELATED TO THIS SUPPLIER.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_HAS_RELATIONSHIPS");
+                return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+            }
+            log.debug("User {} requested to delete the supplier with id: '{}'. DELETING SUPPLIER.", user.getUsername(), id);
+            sRepository.deleteById(id);
+            log.info("User {} requested to delete the supplier with id: '{}'. SUPPLIER DELETED.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to delete the supplier with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        log.debug("User {} requested to delete the supplier with id: {}. DELETING SUPPLIER.", user.getUsername(), id);
-        sRepository.deleteById(id);
-        log.info("User {} requested to delete the supplier with id: {}. SUPPLIER DELETED.", user.getUsername(), id);
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
+
     }
 }

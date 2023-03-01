@@ -2,6 +2,7 @@ package fi.haagahelia.stockmanager.controller.supplier.order;
 
 
 import fi.haagahelia.stockmanager.controller.supplier.SupplierController;
+import fi.haagahelia.stockmanager.dto.common.BodyMessage;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderDTO;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
@@ -15,8 +16,16 @@ import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.util.Pair;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -80,14 +89,27 @@ public class SupplierOrderController {
      * @param supplierOrders Corresponds to the list of supplier orders.
      * @return Corresponds to the list of SupplierOrderDTO.
      */
-    private List<SupplierOrderDTO> convertSupplierOrder(List<SupplierOrder> supplierOrders) {
-        ArrayList<SupplierOrderDTO> supplierOrderDTOS = new ArrayList<>();
+    private PagedModel<SupplierOrderDTO> convertSupplierOrder(Page<SupplierOrder> supplierOrders) {
+        List<SupplierOrderDTO> supplierOrderDTOS = new ArrayList<>();
         for (SupplierOrder supOrder : supplierOrders) {
             SupplierOrderDTO supOrderDTO = SupplierOrderDTO.convert(supOrder);
             createHATEOAS(supOrderDTO);
             supplierOrderDTOS.add(supOrderDTO);
         }
-        return supplierOrderDTOS;
+        PagedModel.PageMetadata pmd = new PagedModel.PageMetadata(supplierOrders.getSize(), supplierOrders.getNumber(), supplierOrders.getTotalElements());
+        return PagedModel.of(supplierOrderDTOS, pmd);
+    }
+
+    private Pair<HttpStatus, String> orderValidation(SupplierOrderCuDTO orderCuDTO) {
+        if (orderCuDTO.getDate() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ORDER_DATE__INVALID.");
+        if (orderCuDTO.getDeliveryDate() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ORDER_DELIVERY_DATE__INVALID.");
+        if (orderCuDTO.getIsReceived() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ORDER_RECEIVE_STATUS__INVALID.");
+        if (orderCuDTO.getOrderIsSent() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ORDER_IS_SENT_STATUS__INVALID.");
+        if (orderCuDTO.getIsReceived() && !orderCuDTO.getOrderIsSent()) {
+            return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ORDER_CANNOT_BE_RECEIVED_CAUSE_NOT_SENT.");
+        }
+        if (orderCuDTO.getSupplierId() == null) return Pair.of(HttpStatus.BAD_REQUEST, "SUPPLIER_ID_INVALID.");
+        return Pair.of(HttpStatus.ACCEPTED, "");
     }
 
 
@@ -102,20 +124,40 @@ public class SupplierOrderController {
      * Thirdly (at least one supplier order), we convert each supplierOrder as a SupplierOrderDTO.
      * At the same time, we also add the HATEOAS links by using the createHATEOAS function.
      * Finally, we can return the list with the SupplierOrderDTOs and an HttpStatusCode.Ok
-     * @return A ResponseEntity object that contain the HttpStatus code and the data.
+     *
+     * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one supplier order has been found. (Page of SupplierOrderDTO)
+     *      --> HttpStatus.NO_CONTENT if no supplier order exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/orders",produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<List<SupplierOrderDTO>> getSuppOrders(@AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting all the orders from the database.", user.getUsername());
-        List<SupplierOrder> supplierOrders = sOrderRepository.findAll();
-        if (supplierOrders.size() == 0) {
-            log.info("User {} requested all the orders from the database. NO DATA FOUND.", user.getUsername());
-            return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getSupplierOrders(@AuthenticationPrincipal Employee user,
+                                                             @RequestParam(required = false) String searchQuery,
+                                                             @PageableDefault(size = 10) Pageable pageable,
+                                                             @SortDefault.SortDefaults({
+                                                                     @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting all the supplier orders.", user.getUsername());
+            Specification<SupplierOrder> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("id")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findAll(spec, pageable);
+            if (supplierOrders.getSize() < 1) {
+                log.info("User {} requested all the supplier orders. NO DATA FOUND.", user.getUsername());
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            PagedModel<SupplierOrderDTO> supplierOrderDTOPage = convertSupplierOrder(supplierOrders);
+            supplierOrderDTOPage.add(linkTo(SupplierOrderController.class).slash("orders").withRel("suppliers-orders"));
+            log.info("User {} requested all the supplier orders. RETURNING DATA.", user.getUsername());
+            return new ResponseEntity<>(supplierOrderDTOPage, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested all the supplier orders. UNEXPECTED ERROR!", user.getUsername());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<SupplierOrderDTO> supplierOrderDTOS = convertSupplierOrder(supplierOrders);
-        log.info("User {} requested all the orders from the database. RETURNING DATA.", user.getUsername());
-        return new ResponseEntity<>(supplierOrderDTOS, HttpStatus.OK);
     }
 
     /**
@@ -126,56 +168,88 @@ public class SupplierOrderController {
      *      If the Optional object is empty, we return an HttpStatus.NO_CONTENT.
      * Thirdly (else), we Convert the SupplierOrder object that is in the Optional as a SupplierOrderDTO.
      * Finally, we add the HATEOAS links to the SupplierOrderDTO object, and we return the data to the user.
+     *
      * @param id Correspond to the id of the order searched by the user.
-     * @return A ResponseEntity object that contain the HttpStatus code and the data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the supplier order exists. (SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the id. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/orders/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> getSupplierOrderById(@PathVariable(value = "id") Long id,
-                                                                               @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting the supplier order with id: {}", user.getUsername(), id);
-        Optional<SupplierOrder> supOrderOptional = sOrderRepository.findById(id);
-        if (!supOrderOptional.isPresent()) {
-            log.info("User {} requested the supplier order with id: {}. NO DATA FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getSupplierOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting the supplier order with id: '{}'", user.getUsername(), id);
+            Optional<SupplierOrder> supOrderOptional = sOrderRepository.findById(id);
+            if (!supOrderOptional.isPresent()) {
+                log.info("User {} requested the supplier order with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(supOrderOptional.get());
+            log.info("User {} requested the supplier order with id: '{}'. RETURNING DATA.", user.getUsername(), id);
+            return new ResponseEntity<>(createHATEOAS(supplierOrderDTO), HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(supOrderOptional.get());
-        log.info("User {} requested the supplier order with id: {}. RETURNING DATA.", user.getUsername(), id);
-        return new ResponseEntity<>(createHATEOAS(supplierOrderDTO), HttpStatus.OK);
     }
 
     /**
      * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
      * This function is used to get all the orders from a supplier.
      * Firstly, we check that the supplier exists.
-     *      If not, we return an HttpStatus.NO_CONTENT to the user.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
      * Secondly, we search all the orders that the suo_sup_id is equals to the id given by the user.
      *      We also check that the list has a size of 0. If it is the case, we return an HttpStatus.NO_CONTENT to the user.
      * Thirdly (at least one order), we convert each SupplierOrder as a SupplierOrderDTO.
      * We also add the HATEOAS links at the same time.
-     * Finally, we return the list of SupplierOrderDTO to the user with an HttpStatus.Ok.
-     * @param id Correspond to the id of the SUPPLIER.
-     * @return A ResponseEntity object that contain the HttpStatus code and the data.
+     * Finally, we return the list of SupplierOrderDTO to the user with an HttpStatus.OK.
+     *
+     * @param id Correspond to the id of the Supplier.
+     * @param user authenticated Employee object
+     * @param searchQuery the search query, which can be null or an empty string
+     * @param pageable pagination information (page number, size, and sorting)
+     * @param sort sorting information for the query
+     * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one supplier order has been found. (Page of SupplierOrderDTO)
+     *      --> HttpStatus.NO_CONTENT if no supplier order exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}/orders", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<List<SupplierOrderDTO>> getSupplierOrders(@PathVariable(value = "id") Long id,
-                                                                                  @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting all the orders related to the supplier: {}", user.getUsername(), id);
-        if (!sRepository.existsById(id)) {
-            log.info("User {} requested the orders related to the supplier: {}. NO SUPPLIER WITH THIS ID.",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getSpecSupplierOrders(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user,
+                                                                 @RequestParam(required = false) String searchQuery,
+                                                                 @PageableDefault(size = 10) Pageable pageable,
+                                                                 @SortDefault.SortDefaults({
+                                                                         @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting all the orders related to the supplier: '{}'", user.getUsername(), id);
+            if (!sRepository.existsById(id)) {
+                log.info("User {} requested the orders related to the supplier: '{}'. NO SUPPLIER WITH THIS ID.",
+                        user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Specification<SupplierOrder> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("id")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id, spec, pageable);
+            if (supplierOrders.getSize() < 1) {
+                log.info("User {} requested the orders related to the supplier: '{}'. NO DATA FOUND.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            PagedModel<SupplierOrderDTO> supplierOrderDTOPage = convertSupplierOrder(supplierOrders);
+            supplierOrderDTOPage.add(linkTo(SupplierOrderController.class).slash(id).slash("orders").withRel("suppliers-orders"));
+            log.info("User {} requested the orders related to the supplier: '{}'. RETURNING DATA.", user.getUsername(), id);
+            return new ResponseEntity<>(supplierOrderDTOPage, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the orders related to the supplier: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id);
-        if (supplierOrders.size() == 0) {
-            log.info("User {} requested the orders related to the supplier: {}. NO DATA FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        List<SupplierOrderDTO> supplierOrderDTOS = convertSupplierOrder(supplierOrders);
-        log.info("User {} requested the orders related to the supplier: {}. RETURNING DATA.", user.getUsername(), id);
-        return new ResponseEntity<>(supplierOrderDTOS, HttpStatus.OK);
     }
 
     /**
@@ -188,41 +262,51 @@ public class SupplierOrderController {
      *      if the list is empty, we return an HttpStatus.NO_CONTENT to the user.
      * Finally, we convert all the SupplierOrders as a SupplierOrdersDTO by using the convertSupplierOrder function.
      * When the list has been converted, we can return data to the user with an HttpStatus.OK.
+     *
      * @param date Corresponds to the delivery date the user wants the sales orders.
-     * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @param user authenticated Employee object
+     * @param searchQuery the search query, which can be null or an empty string
+     * @param pageable pagination information (page number, size, and sorting)
+     * @param sort sorting information for the query
+     * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one supplier order has been found. (Page of SupplierOrderDTO)
+     *      --> HttpStatus.UNPROCESSABLE_ENTITY if the delivery date is null. (ErrorMessage)
+     *      --> HttpStatus.NO_CONTENT if no supplier order exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/orders/deliverydate={date}", produces = "application/json")
+    @GetMapping(value = "/orders/delivery={date}", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<List<SupplierOrderDTO>> getSupOrdersDate(@PathVariable(value = "date") LocalDate date,
-                                                                                 @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting all the supplier orders related to the date: {}", user.getUsername(), date);
-        if (date == null) {
-            log.info("User {} requested the supplier orders with a delivery date that is null.", user.getUsername());
-            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+    public @ResponseBody ResponseEntity<?> getSupOrdersDate(@PathVariable(value = "date") LocalDate date, @AuthenticationPrincipal Employee user,
+                                                            @RequestParam(required = false) String searchQuery,
+                                                            @PageableDefault(size = 10) Pageable pageable,
+                                                            @SortDefault.SortDefaults({
+                                                                    @SortDefault(sort = "deliveryDate", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting all the supplier orders related to the date: '{}'", user.getUsername(), date);
+            if (date == null) {
+                log.info("User {} requested the supplier orders with a delivery date that is null.", user.getUsername());
+                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "DELIVERY_DATE_NULL");
+                return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            Specification<SupplierOrder> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findByDeliveryDate(date, spec, pageable);
+            if (supplierOrders.getSize() < 1) {
+                log.info("User {} requested the supplier orders with a delivery date: '{}'. NO ORDERS FOUND.", user.getUsername(), date);
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            PagedModel<SupplierOrderDTO> supplierOrderDTOPage = convertSupplierOrder(supplierOrders);
+            supplierOrderDTOPage.add(linkTo(SupplierOrderController.class).slash("orders").slash("delivery=" + date).withRel("suppliers-orders"));
+            log.info("User {} requested the supplier orders with a delivery date: '{}'. RETURNING ORDERS.", user.getUsername(), date);
+            return new ResponseEntity<>(supplierOrderDTOPage, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the supplier orders with a delivery date: '{}'. UNEXPECTED ERROR!", user.getUsername(), date);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<SupplierOrder> orderList = sOrderRepository.findByDeliveryDate(date);
-        if (orderList.size() < 1) {
-            log.info("User {} requested the supplier orders with a delivery date: {}. NO ORDERS FOUND.",
-                    user.getUsername(), date);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        List<SupplierOrderDTO> supplierOrderDTOS = convertSupplierOrder(orderList);
-        log.info("User {} requested the supplier orders with a delivery date: {}. RETURNING ORDERS.",
-                user.getUsername(), date);
-        return new ResponseEntity<>(supplierOrderDTOS, HttpStatus.OK);
-    }
-
-    private Pair<HttpStatus, String> orderValidation(SupplierOrderCuDTO orderCuDTO) {
-        if (orderCuDTO.getDate() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "DATE INVALID.");
-        if (orderCuDTO.getDeliveryDate() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "DELIVERY DATE INVALID.");
-        if (orderCuDTO.getIsReceived() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "RECEIVE STATUS INVALID.");
-        if (orderCuDTO.getOrderIsSent() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "IS SENT STATUS INVALID.");
-        if (orderCuDTO.getIsReceived() && !orderCuDTO.getOrderIsSent()) {
-            return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "ORDER CANNOT BE RECEIVED IF IT IS NOT SENT.");
-        }
-        if (orderCuDTO.getSupplierId() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "SUPPLIER ID INVALID.");
-        return Pair.of(HttpStatus.ACCEPTED, "");
     }
 
     /**
@@ -234,41 +318,48 @@ public class SupplierOrderController {
      * Thirdly, after that the SupplierOrder object is created, we can save the data in the database.
      * Finally, we convert the SupplierOrder object as a SupplierOrderDTO object.
      * We can add the HATEOAS links and return the data to the user.
+     *
      * @param orderCuDTO Corresponds to the new supplier order that the user wants to save.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.CREATED if the supplier order has been created. (SupplierOrderDTO)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(value = "/orders", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> createSupplierOrder(@RequestBody SupplierOrderCuDTO orderCuDTO,
-                                                                              @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to create a new supplier order.", user.getUsername());
-        Pair<HttpStatus, String> orderValidation = orderValidation(orderCuDTO);
-        if (!orderValidation.getFirst().equals(HttpStatus.ACCEPTED)) {
-            log.info("User {} requested to create a new supplier order, date: {}. {}",
-                    user.getUsername(), orderCuDTO.getDate(), orderValidation.getSecond());
-            return new ResponseEntity<>(orderValidation.getFirst());
+    public @ResponseBody ResponseEntity<?> createSupplierOrder(@RequestBody SupplierOrderCuDTO orderCuDTO, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to create a new supplier order.", user.getUsername());
+            Pair<HttpStatus, String> validation = orderValidation(orderCuDTO);
+            if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
+                log.info("User {} requested to create a new supplier order, date: '{}'. {}",
+                        user.getUsername(), orderCuDTO.getDate(), validation.getSecond());
+                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                return new ResponseEntity<>(bm, validation.getFirst());
+            }
+            Optional<Supplier> supplierOptional = sRepository.findById(orderCuDTO.getSupplierId());
+            if (!supplierOptional.isPresent()) {
+                log.info("User {} requested to create a new supplier order, date: '{}'. NO SUPPLIER FOUND", user.getUsername(), orderCuDTO.getDate());
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_NOT_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            SupplierOrder supplierOrder = new SupplierOrder();
+            supplierOrder.setSupplier(supplierOptional.get());
+            supplierOrder.setDate(orderCuDTO.getDate());
+            supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
+            supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
+            supplierOrder.setReceived(orderCuDTO.getIsReceived());
+            log.debug("User {} requested to create a new supplier order, date: '{}'. SAVING ORDER.", user.getUsername(), supplierOrder.getDate());
+            SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
+            SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
+            createHATEOAS(supplierOrderDTO);
+            log.info("User {} requested to create a new supplier order, date: '{}'. RETURNING SAVED ORDER.", user.getUsername(), supplierOrder.getDate());
+            return new ResponseEntity<>(supplierOrderDTO, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.info("User {} requested to create a new supplier order, date: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderCuDTO.getDate());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Optional<Supplier> supplierOptional = sRepository.findById(orderCuDTO.getSupplierId());
-        if (!supplierOptional.isPresent()) {
-            log.info("User {} requested to create a new supplier order, date: {}. NO SUPPLIER FOUND",
-                    user.getUsername(), orderCuDTO.getDate());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        SupplierOrder supplierOrder = new SupplierOrder();
-        supplierOrder.setSupplier(supplierOptional.get());
-        supplierOrder.setDate(orderCuDTO.getDate());
-        supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
-        supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
-        supplierOrder.setReceived(orderCuDTO.getIsReceived());
-        log.debug("User {} requested to create a new supplier order, date: {}. SAVING ORDER.",
-                user.getUsername(), supplierOrder.getDate());
-        SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
-        SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
-        createHATEOAS(supplierOrderDTO);
-        log.info("User {} requested to create a new supplier order, date: {}. RETURNING SAVED ORDER.",
-                user.getUsername(), supplierOrder.getDate());
-        return new ResponseEntity<>(supplierOrderDTO, HttpStatus.CREATED);
     }
 
     /**
@@ -281,35 +372,42 @@ public class SupplierOrderController {
      * Thirdly, we can save the modification in the database.
      * Finally, we convert the saved SupplierOrder as a SupplierOrderDTO and we add the HATEOAS links.
      * After that, we can return the saved SupplierOrderDTO to the user with an HttpStatus.ACCEPTED.
+     *
      * @param id Corresponds to the id of the supplier order to update.
      * @param orderCuDTO Corresponds to the new data that the user wants to change.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the supplier order has been updated. (SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> updateSupOrder(@PathVariable(value = "id") Long id,
-                                                                         @RequestBody SupplierOrderCuDTO orderCuDTO,
-                                                                         @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to update the supplier order with id: {}.", user.getUsername(), id);
-        Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-        if (!orderOptional.isPresent()) {
-            log.info("User {} requested to update the supplier order with id: {}. NO SUPPLIER ORDER FOUND",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> updateSupOrder(@PathVariable(value = "id") Long id,
+                                                          @RequestBody SupplierOrderCuDTO orderCuDTO,
+                                                          @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to update the supplier order with id: '{}'.", user.getUsername(), id);
+            Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
+            if (!orderOptional.isPresent()) {
+                log.info("User {} requested to update the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            SupplierOrder supplierOrder = orderOptional.get();
+            if (orderCuDTO.getDeliveryDate() != null) supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
+            // if (orderCuDTO.getOrderIsSent() != null) supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
+            // if (orderCuDTO.getIsReceived() != null) supplierOrder.setReceived(orderCuDTO.getIsReceived());
+            log.debug("User {} requested to update the supplier order with id: '{}'. SAVING ORDER'S UPDATE.", user.getUsername(), supplierOrder.getDate());
+            SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
+            SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
+            createHATEOAS(supplierOrderDTO);
+            log.info("User {} requested to update the supplier order with id: '{}'. RETURNING UPDATED ORDER.", user.getUsername(), supplierOrder.getDate());
+            return new ResponseEntity<>(supplierOrderDTO, HttpStatus.ACCEPTED);
+        } catch (Exception e) {
+            log.info("User {} requested to update the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderCuDTO.getDate());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        SupplierOrder supplierOrder = orderOptional.get();
-        if (orderCuDTO.getOrderIsSent() != null) supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
-        if (orderCuDTO.getDeliveryDate() != null) supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
-        // if (orderCuDTO.getIsReceived() != null) supplierOrder.setReceived(orderCuDTO.getIsReceived());
-        log.debug("User {} requested to update the supplier order with id: {}. SAVING ORDER'S UPDATE.",
-                user.getUsername(), supplierOrder.getDate());
-        SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
-        SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
-        createHATEOAS(supplierOrderDTO);
-        log.info("User {} requested to update the supplier order with id: {}. RETURNING UPDATED ORDER.",
-                user.getUsername(), supplierOrder.getDate());
-        return new ResponseEntity<>(supplierOrderDTO, HttpStatus.ACCEPTED);
     }
 
     /**
@@ -317,28 +415,35 @@ public class SupplierOrderController {
      * This function is used to send an order to a supplier.
      * We use the function sendOrderById provided by the SupplierOrderManagerImpl class.
      * Depending on the Exception returned by sendOrderById, we return an appropriate HttpStatus.
+     *
      * @param id Corresponds to the id of the supplier order to send.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or an Error Message.
+     *      --> HttpStatus.OK if the supplier order has been updated. (SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id. (ErrorMessage)
+     *      --> HttpStatus.CONFLICT if no supplier order is already sent. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/send", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> sendOrder(@PathVariable(value = "id") Long id,
-                                                                    @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> sendOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to send the supplier order with id: {}.", user.getUsername(), id);
         try {
             SupplierOrder supplierOrder = orderManager.sendOrderById(id);
             SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
             createHATEOAS(convert);
-            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(convert, HttpStatus.OK);
         } catch (UnknownOrderException e) {
-            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
-                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            log.info("User {} requested to change the receive state of the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+            return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (OrderStateException e) {
-            log.info("User {} requested to change the state of the supplier order with id: {}." +
-                    "ORDER IS ALREADY SENT.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+            log.info("User {} requested to change the state of the supplier order with id: '{}'. ORDER IS ALREADY SENT.", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT");
+            return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            log.info("User {} requested to change the state of the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -347,32 +452,40 @@ public class SupplierOrderController {
      * This function is used to considerate a supplier order as received.
      * We use the function receiveOrderById provided by the SupplierOrderManagerImpl class.
      * Depending on the Exception returned by receiveOrderById, we return an appropriate HttpStatus.
+     *
      * @param id Corresponds to the id of the supplier order to send.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or an Error Message.
+     *      --> HttpStatus.OK if the supplier order has been updated. (SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id. (ErrorMessage)
+     *      --> HttpStatus.CONFLICT if no supplier order is already received. (ErrorMessage)
+     *      --> HttpStatus.NOT_MODIFIED if a product of the order had a problem. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/received", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> receivedOrder(@PathVariable(value = "id") Long id,
-                                                                        @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> receivedOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         log.info("User {} is requesting to change the receive state of the supplier order with id: {}.", user.getUsername(), id);
         try {
             SupplierOrder supplierOrder = orderManager.receiveOrderById(id);
             SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
             createHATEOAS(convert);
-            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(convert, HttpStatus.OK);
         } catch (UnknownOrderException e) {
-            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
-                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            log.info("User {} requested to change the receive state of the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+            return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (OrderStateException e) {
-            log.info("User {} requested to change the state of the supplier order with id: {}." +
-                    "ORDER IS NOT SENT OR ALREADY RECEIVED.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+            log.info("User {} requested to change the state of the supplier order with id: '{}'. ORDER IS NOT SENT OR ALREADY RECEIVED.", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_RECEIVED");
+            return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
         } catch (ProductStockException e) {
-            log.info("User {} requested to change the receive state of the supplier order with id: {}." +
-                    e.getMessage(), user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+            log.info("User {} requested to change the receive state of the supplier order with id: '{}'." + e.getMessage(), user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
+            return new ResponseEntity<>(bm, HttpStatus.NOT_MODIFIED);
+        } catch (Exception e) {
+            log.info("User {} requested to change the receive state of the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -381,99 +494,120 @@ public class SupplierOrderController {
      * This function is used to cancel the reception of a supplier order.
      * We use the function cancelReceiveOrder provided by the SupplierOrderManagerImpl class.
      * Depending on the Exception returned by cancelReceiveOrder, we return an appropriate HttpStatus.
+     *
      * @param id Corresponds to the id of the supplier order to send.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a SupplierOrderDTO objects or an Error Message.
+     *      --> HttpStatus.OK if the supplier order has been updated. (SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id. (ErrorMessage)
+     *      --> HttpStatus.CONFLICT if no supplier order is not already received. (ErrorMessage)
+     *      --> HttpStatus.NOT_MODIFIED if a product of the order had a problem. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/cancel-reception", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> cancelReceivedOrder(@PathVariable(value = "id") Long id,
-                                                                              @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to change the receive state (not received) of the supplier order with id: {}.",
-                user.getUsername(), id);
+    public @ResponseBody ResponseEntity<?> cancelReceivedOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        log.info("User {} is requesting to change the receive state (not received) of the supplier order with id: {}.", user.getUsername(), id);
         try {
             SupplierOrder supplierOrder = orderManager.cancelReceiveOrder(id);
             SupplierOrderDTO convert = SupplierOrderDTO.convert(supplierOrder);
             createHATEOAS(convert);
-            return new ResponseEntity<>(convert, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(convert, HttpStatus.OK);
         } catch (UnknownOrderException e) {
-            log.info("User {} requested to cancel the reception of the supplier order with id: {}." +
-                    "NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            log.info("User {} requested to cancel the reception of the supplier order with id: {}. NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+            return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (ProductStockException e) {
             log.info("User {} requested: " + e.getMessage(), user.getUsername());
-            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+            BodyMessage bm = new BodyMessage(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
+            return new ResponseEntity<>(bm, HttpStatus.NOT_MODIFIED);
         } catch (OrderStateException e) {
-            log.info("User {} requested to cancel a supplier order that is not received, order id: {}",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+            log.info("User {} requested to cancel a supplier order that is not received, order id: {}", user.getUsername(), id);
+            BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_NOT_RECEIVED");
+            return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            log.info("User {} requested to change the receive state of the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * AVAILABLE FOR: ROLE_MANAGER | ROLE_ADMIN
      * Firstly, we check that a supplier order exists with the corresponding id.
-     *      If not, we return an HttpStatus.NO_CONTENT to the user.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
      * Secondly, we check that the age of the order is not more than three days old and that the order is not set
      *      If the order has been made more than 3 days ago, we return to the user an HttpStatus.NO_ACCEPTABLE.
      * Secondly, we can delete the object from the database.
      * Finally, we return to the user that the operation worked correctly.
+     *
      * @param id Corresponds to the id of the supplier order that the user wants to delete.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing an Error Message.
+     *      --> HttpStatus.OK if the supplier order has been deleted.
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id.
+     *      --> HttpStatus.PRECONDITION_FAILED if the supplier order is too old.
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/orders/{id}", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> deleteSupOrder(@PathVariable(value = "id") Long id,
-                                                                         @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to delete the supplier order with id: {}.", user.getUsername(), id);
-        Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-        if (!orderOptional.isPresent()) {
-            log.info("User {} requested to delete the supplier order with id: {}. NO SUPPLIER ORDER FOUND.",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<BodyMessage> deleteSupOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to delete the supplier order with id: '{}'.", user.getUsername(), id);
+            Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
+            if (!orderOptional.isPresent()) {
+                log.info("User {} requested to delete the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            SupplierOrder supplierOrder = orderOptional.get();
+            if (supplierOrder.getDate().plusDays(3).isAfter(LocalDate.now()) || supplierOrder.getOrderIsSent()) {
+                log.info("User {} requested to delete the supplier order with id: '{}'. ORDER CANNOT BE DELETED.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_TOO_OLD");
+                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+            }
+            log.debug("User {} requested to delete the supplier order with id: '{}'. DELETING SUPPLIER ORDER.", user.getUsername(), id);
+            sOrderRepository.deleteById(id);
+            log.info("User {} requested to delete the supplier order with id: '{}'. SUPPLIER ORDER DELETED.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to delete the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        SupplierOrder supplierOrder = orderOptional.get();
-        if (supplierOrder.getDate().plusDays(3).isAfter(LocalDate.now()) || supplierOrder.getOrderIsSent()) {
-            log.info("User {} requested to delete the supplier order with id: {}. ORDER CANNOT BE DELETED.",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
-        log.debug("User {} requested to delete the supplier order with id: {}. DELETING SUPPLIER ORDER.",
-                user.getUsername(), id);
-        sOrderRepository.deleteById(id);
-        log.info("User {} requested to delete the supplier order with id: {}. SUPPLIER ORDER DELETED.",
-                user.getUsername(), id);
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     /**
      * AVAILABLE FOR: ROLE_ADMIN
      * This function is used to delete a supplier order by its id.
      * Firstly, we check that a supplier order exists with the corresponding id.
-     *      If not, we return an HttpStatus.NO_CONTENT to the user.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
      * Secondly, we can delete the object from the database.
      * Finally, we return to the user that the operation worked correctly.
+     *
      * @param id Corresponds to the id of the supplier order that the user wants to delete.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing an Error Message.
+     *      --> HttpStatus.OK if the supplier order has been deleted.
+     *      --> HttpStatus.BAD_REQUEST if no supplier order corresponds to the given id.
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/orders/{id}/force", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<SupplierOrderDTO> deleteOrderForce(@PathVariable(value = "id") Long id,
-                                                                           @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to delete the supplier order with id: {}.", user.getUsername(), id);
-        if (!sOrderRepository.existsById(id)) {
-            log.info("User {} requested to delete the supplier order with id: {}. NO CUSTOMER ORDER.",
-                    user.getUsername(), id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<BodyMessage> deleteOrderForce(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to delete the supplier order with id: '{}'.", user.getUsername(), id);
+            if (!sOrderRepository.existsById(id)) {
+                log.info("User {} requested to delete the supplier order with id: '{}'. NO CUSTOMER ORDER.", user.getUsername(), id);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            log.warn("User {} requested to delete the supplier order with id: '{}'. DELETING CUSTOMER ORDER.", user.getUsername(), id);
+            sOrderRepository.deleteById(id);
+            log.info("User {} requested to delete the supplier order with id: '{}'. CUSTOMER ORDER DELETED.", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to delete the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        log.warn("User {} requested to delete the supplier order with id: {}. DELETING CUSTOMER ORDER.",
-                user.getUsername(), id);
-        sOrderRepository.deleteById(id);
-        log.info("User {} requested to delete the supplier order with id: {}. CUSTOMER ORDER DELETED.",
-                user.getUsername(), id);
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
 }

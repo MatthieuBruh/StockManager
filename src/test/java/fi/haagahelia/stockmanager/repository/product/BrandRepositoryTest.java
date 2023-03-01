@@ -61,7 +61,7 @@ public class BrandRepositoryTest {
     }
 
     /**
-     * Thant test is used to ensure that the brand repository will not find a brand if we give a wrong id.
+     * This test is used to ensure that the brand repository will not find a brand if we give a wrong id.
      */
     @Test
     public void notFoundById() {

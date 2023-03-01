@@ -2,7 +2,9 @@ package fi.haagahelia.stockmanager.repository.product;
 
 import fi.haagahelia.stockmanager.model.product.category.Category;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,13 @@ public class CategoryRepositoryTest {
     @Autowired
     private TestEntityManager testEntityManager;
 
+    @BeforeEach
+    public void setUp() {
+        EntityManager em = testEntityManager.getEntityManager();
+        Query deleteCategories = em.createQuery("DELETE Category c");
+        deleteCategories.executeUpdate();
+    }
+
     /**
      * This test is used to ensure that the category repository can find the category that corresponds to an id.
      */
@@ -57,7 +66,7 @@ public class CategoryRepositoryTest {
     }
 
     /**
-     * Thant test is used to ensure that the category repository will not find a category if we give a wrong id.
+     * This test is used to ensure that the category repository will not find a category if we give a wrong id.
      */
     @Test
     public void notFoundById() {

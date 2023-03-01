@@ -50,7 +50,8 @@ public class Supplier {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Supplier supplier = (Supplier) o;
-        return id.equals(supplier.id) && name.equals(supplier.name) && Objects.equals(email, supplier.email) && Objects.equals(phoneNumber, supplier.phoneNumber);
+        return id.equals(supplier.id) && name.equals(supplier.name) && Objects.equals(email, supplier.email)
+                && Objects.equals(phoneNumber, supplier.phoneNumber);
     }
 
     @Override

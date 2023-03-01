@@ -41,6 +41,13 @@ public class Customer {
         this.email = email;
     }
 
+    public Customer(String firstName, String lastName, String email, Geolocation geolocation) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.geolocation = geolocation;
+    }
+
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
 
     @Override
