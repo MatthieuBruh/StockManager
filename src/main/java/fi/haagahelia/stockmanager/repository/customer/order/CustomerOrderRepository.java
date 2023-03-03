@@ -2,6 +2,9 @@ package fi.haagahelia.stockmanager.repository.customer.order;
 
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,8 +17,9 @@ import java.util.Optional;
 @Repository
 public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Long> {
     Optional<CustomerOrder> findById(Long id);
-    List<CustomerOrder> findByCustomerId(Long id);
-    List<CustomerOrder> findByDeliveryDate(LocalDate date);
+    Page<CustomerOrder> findAll(Specification<CustomerOrder> spec, Pageable pageable);
+    Page<CustomerOrder> findByCustomerId(Long id, Specification<CustomerOrder> spec, Pageable pageable);
+    Page<CustomerOrder> findByDeliveryDate(LocalDate date, Specification<CustomerOrder> spec, Pageable pageable);
 
     @Query(value = "SELECT o.isSent FROM CustomerOrder o WHERE o.id = ?1")
     Boolean getCustomerOrderSentByCustomerId(Long id);

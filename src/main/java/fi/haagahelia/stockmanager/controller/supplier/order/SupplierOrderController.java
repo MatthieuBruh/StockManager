@@ -79,7 +79,6 @@ public class SupplierOrderController {
                     .slash(orderDTO.getSupplierDTO().getId()).withRel("supplier");
             orderDTO.add(supplierLink);
         }
-
         return orderDTO;
     }
 
@@ -214,6 +213,7 @@ public class SupplierOrderController {
      * @param sort sorting information for the query
      * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
      *      --> HttpStatus.OK if at least one supplier order has been found. (Page of SupplierOrderDTO)
+     *      --> HttpStatus.BAD_REQUEST if no supplier exists with the given id. (ErrorMessage)
      *      --> HttpStatus.NO_CONTENT if no supplier order exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
@@ -285,7 +285,7 @@ public class SupplierOrderController {
             log.info("User {} is requesting all the supplier orders related to the date: '{}'", user.getUsername(), date);
             if (date == null) {
                 log.info("User {} requested the supplier orders with a delivery date that is null.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "DELIVERY_DATE_NULL");
+                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "URL_DELIVERY_DATE_NULL");
                 return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
             }
             Specification<SupplierOrder> spec = null;
@@ -562,8 +562,8 @@ public class SupplierOrderController {
             SupplierOrder supplierOrder = orderOptional.get();
             if (supplierOrder.getDate().plusDays(3).isAfter(LocalDate.now()) || supplierOrder.getOrderIsSent()) {
                 log.info("User {} requested to delete the supplier order with id: '{}'. ORDER CANNOT BE DELETED.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_TOO_OLD");
-                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_TOO_OLD");
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.debug("User {} requested to delete the supplier order with id: '{}'. DELETING SUPPLIER ORDER.", user.getUsername(), id);
             sOrderRepository.deleteById(id);

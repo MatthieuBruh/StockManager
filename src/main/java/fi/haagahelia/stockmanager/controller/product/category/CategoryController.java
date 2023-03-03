@@ -261,7 +261,6 @@ public class CategoryController {
             log.info("User {} requested to update the category with the id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**

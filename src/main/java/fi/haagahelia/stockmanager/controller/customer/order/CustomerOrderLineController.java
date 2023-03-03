@@ -2,6 +2,7 @@ package fi.haagahelia.stockmanager.controller.customer.order;
 
 
 import fi.haagahelia.stockmanager.controller.product.ProductController;
+import fi.haagahelia.stockmanager.dto.common.BodyMessage;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineDTO;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
@@ -11,9 +12,17 @@ import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderLineRepository;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +36,7 @@ import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-@Slf4j
+@Log4j2
 @RestController
 @RequestMapping("/api/customers/orders/{orderId}")
 public class CustomerOrderLineController {
@@ -39,8 +48,7 @@ public class CustomerOrderLineController {
     private final ProductRepository pRepository;
 
     @Autowired
-    public CustomerOrderLineController(CustomerOrderRepository coRepository, CustomerOrderLineRepository lineRepository,
-                                       ProductRepository pRepository) {
+    public CustomerOrderLineController(CustomerOrderRepository coRepository, CustomerOrderLineRepository lineRepository, ProductRepository pRepository) {
         this.coRepository = coRepository;
         this.lineRepository = lineRepository;
         this.pRepository = pRepository;
@@ -57,12 +65,10 @@ public class CustomerOrderLineController {
         Long orderId = lineDTO.getCustomerOrderDTO().getId();
         Long productId = lineDTO.getProductSimpleDTO().getId();
 
-        Link selfRel = linkTo(CustomerOrderLineController.class)
-                .slash(orderId).slash("details").slash(productId).withSelfRel();
+        Link selfRel = linkTo(CustomerOrderLineController.class).slash(orderId).slash("details").slash(productId).withSelfRel();
         lineDTO.add(selfRel);
 
-        Link orderDetailsLink = linkTo(CustomerOrderLineController.class)
-                .slash(orderId).slash("details").withRel("order-details");
+        Link orderDetailsLink = linkTo(CustomerOrderLineController.class).slash(orderId).slash("details").withRel("order-details");
         lineDTO.add(orderDetailsLink);
 
         Link orderLink = linkTo(CustomerOrderController.class).slash(orderId).withRel("order");
@@ -79,14 +85,15 @@ public class CustomerOrderLineController {
      * @param orderLines Corresponds to the list of CustomerOrder.
      * @return Corresponds to the list of CustomerOrderDTO.
      */
-    private List<CustomerOrderLineDTO> convertCustomerOrderLines(List<CustomerOrderLine> orderLines) {
+    private PagedModel<CustomerOrderLineDTO> convertCustomerOrderLines(Page<CustomerOrderLine> orderLines) {
         List<CustomerOrderLineDTO> customerOrderLineDTOS = new ArrayList<>();
         for (CustomerOrderLine cusOrderLine : orderLines) {
             CustomerOrderLineDTO cusOrderLineDTO = CustomerOrderLineDTO.convert(cusOrderLine);
             createHATEOAS(cusOrderLineDTO);
             customerOrderLineDTOS.add(cusOrderLineDTO);
         }
-        return customerOrderLineDTOS;
+        PagedModel.PageMetadata pmd = new PagedModel.PageMetadata(orderLines.getSize(), orderLines.getNumber(), orderLines.getTotalElements());
+        return PagedModel.of(customerOrderLineDTOS, pmd);
     }
 
 
@@ -103,30 +110,48 @@ public class CustomerOrderLineController {
      * Fourthly, we convert all the CustomerOrderLine as CustomerOrderLineDTO, we add the HATEOAS links.
      * Then we can add the new object to the final list.
      * Finally, we return the data to the user with an HttpStatus.Ok.
+     *
      * @param orderId Corresponds to the id of the customer order.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a page model of CustomerOrderLineDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one customer order line has been found. (Page of CustomerOrderLineDTO)
+     *      --> HttpStatus.BAD_REQUEST if the customer order does not exits. (ErrorMessage)
+     *      --> HttpStatus.NO_CONTENT if no customer order line exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/details",produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<List<CustomerOrderLineDTO>> getOrderLines(@PathVariable(value = "orderId") Long orderId,
-                                                                                  @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting the customer order lines of the order: {}.", user.getUsername(), orderId);
-        if (!coRepository.existsById(orderId)) {
-            log.info("User {} requested the customer order's lines of the order: {}. ORDER NOT FOUND.",
-                    user.getUsername(), orderId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
+                                                         @RequestParam(required = false) String searchQuery,
+                                                         @PageableDefault(size = 10) Pageable pageable,
+                                                         @SortDefault.SortDefaults({
+                                                                 @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting the customer order lines of the order: {}.", user.getUsername(), orderId);
+            if (!coRepository.existsById(orderId)) {
+                log.info("User {} requested the customer order lines of the order: {}. ORDER NOT FOUND.", user.getUsername(), orderId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Specification<CustomerOrderLine> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("quantity")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Page<CustomerOrderLine> customerOrderLines = lineRepository.findByCustomerOrderId(orderId, spec, pageable);
+            if (customerOrderLines.getSize() < 1) {
+                log.info("User {} requested the customer order lines of the order: '{}'. NO LINES FOUND.", user.getUsername(), orderId);
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_LINES_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            PagedModel<CustomerOrderLineDTO> cusOrderLinesDTOS = convertCustomerOrderLines(customerOrderLines);
+            cusOrderLinesDTOS.add(linkTo(CustomerOrderLineRepository.class).slash(orderId).slash("details").withSelfRel());
+            log.info("User {} requested the customer order lines of the order: '{}'. RETURNING DATA.", user.getUsername(), orderId);
+            return new ResponseEntity<>(cusOrderLinesDTOS, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the customer order lines of the order: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<CustomerOrderLine> customerOrderLines = lineRepository.findByCustomerOrderId(orderId);
-        if (customerOrderLines.size() < 1) {
-            log.info("User {} requested the customer order's lines of the order: {}. NO LINES FOUND.",
-                    user.getUsername(), orderId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        List<CustomerOrderLineDTO> cusOrderLinesDTOS = convertCustomerOrderLines(customerOrderLines);
-        log.info("User {} requested the customer order's lines of the order: {}. RETURNING DATA.",
-                user.getUsername(), orderId);
-        return new ResponseEntity<>(cusOrderLinesDTOS, HttpStatus.OK);
     }
 
     /**
@@ -138,38 +163,46 @@ public class CustomerOrderLineController {
      *      If it is the case, we return an HttpStatu.NO_CONTENT.
      * Finally, we convert the object as a CustomerOrderLineDTO, and we return the DTO object
      * with the HATEOAS links to the user with an HttpStatus.Ok.
+     *
      * @param orderId Corresponds to the id of the customer order.
      * @param productId Corresponds to the id of a product.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a CustomerOrderLineDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the customer order line exists. (CustomerOrderLineDTO)
+     *      --> HttpStatus.BAD_REQUEST if the customer order or the product does not exit. (ErrorMessage)
+     *      --> HttpStatus.NO_CONTENT if no customer order line corresponds to the id. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerOrderLineDTO> getOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                           @PathVariable(value = "productId") Long productId,
-                                                                           @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting the customer order line: orderId: {} ; productId: {}.",
-                user.getUsername(), orderId, productId);
-        if (!coRepository.existsById(orderId)) {
-            log.info("User {} requested the customer order line: orderId: {} ; productId: {}. ORDER NOT FOUND.",
-                    user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId,
+                                                           @PathVariable(value = "productId") Long productId,
+                                                           @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
+            if (!coRepository.existsById(orderId)) {
+                log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            if (!pRepository.existsById(productId)) {
+                log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Optional<CustomerOrderLine> orderLine = lineRepository.findByCustomerOrderIdAndProductId(orderId, productId);
+            if (!orderLine.isPresent()) {
+                log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. NO ORDER LINE FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            CustomerOrderLineDTO cusOrderLineDTO = CustomerOrderLineDTO.convert(orderLine.get());
+            log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. RETURNING DATA.", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(createHATEOAS(cusOrderLineDTO), HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the customer order line: orderId: '{}'; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        if (!pRepository.existsById(productId)) {
-            log.info("User {} requested the customer order line: orderId: {} ; productId: {}. PRODUCT NOT FOUND.",
-                    user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        Optional<CustomerOrderLine> orderLine = lineRepository.findByCustomerOrderIdAndProductId(orderId, productId);
-        if (!orderLine.isPresent()) {
-            log.info("User {} requested the customer order line: orderId: {} ; productId: {}. NO ORDER LINE FOUND.",
-                    user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        CustomerOrderLineDTO cusOrderLineDTO = CustomerOrderLineDTO.convert(orderLine.get());
-        log.info("User {} requested the customer order line: orderId: {} ; productId: {}. RETURNING DATA.",
-                user.getUsername(), orderId, productId);
-        return new ResponseEntity<>(createHATEOAS(cusOrderLineDTO), HttpStatus.OK);
     }
 
     /**
@@ -184,76 +217,81 @@ public class CustomerOrderLineController {
      * Fifthly, we can save the object in the database.
      * Finally, we convert the CustomerOrderLine object as a CustomerOrderLineDTO, we add the HATEOAS links, and we can
      * return the data to the user with an HttpStatus.CREATED.
+     *
      * @param orderId Corresponds to the order's id to which we will add the order line.
      * @param productId Corresponds to the product that the customer wants to buy.
      * @param cusOrderLineDTO Corresponds to other data about the customer order line.
      * @param user Corresponds to the authenticated user.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing a CustomerOrderLineDTO objects or a Error Message.
+     *      --> HttpStatus.CREATED if the customer order line has been created. (CustomerOrderLineDTO)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(value = "/details/{productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerOrderLineDTO> createCusOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                                 @PathVariable(value = "productId") Long productId,
-                                                                                 @RequestBody CustomerOrderLineCuDTO cusOrderLineDTO,
-                                                                                 @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to create a new customer order line: orderId: {} ; productId: {}.",
-                user.getUsername(), orderId, productId);
-        // --------------- Order verification ---------------
-        Optional<CustomerOrder> orderOptional = coRepository.findById(orderId);
-        if (!orderOptional.isPresent()) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                            "ORDER NOT FOUND.", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> createCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+                                                              @RequestBody CustomerOrderLineCuDTO cusOrderLineDTO, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to create a new customer order line: orderId: '{}' ; productId: '{}'.",
+                    user.getUsername(), orderId, productId);
+            // --------------- Order verification ---------------
+            Optional<CustomerOrder> orderOptional = coRepository.findById(orderId);
+            if (!orderOptional.isPresent()) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            CustomerOrder customerOrder = orderOptional.get();
+            if (customerOrder.getSent() || customerOrder.getDeliveryDate().isAfter(LocalDate.now())) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED");
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
+            }
+            // --------------- Product verification ---------------
+            Optional<Product> productOptional = pRepository.findById(productId);
+            if (!productOptional.isPresent()) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Product product = productOptional.get();
+            if (product.getStock() - cusOrderLineDTO.getQuantity() < 0) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. NOT ENOUGH STOCK", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_STOCK_TOO_LOW");
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
+            }
+            // --------------- Others verification ---------------
+            if (lineRepository.existsByCustomerOrderIdAndProductId(customerOrder.getId(), product.getId())) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ALREADY EXISTS.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_LINE_ALREADY_EXIST");
+                return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+            }
+            if (cusOrderLineDTO.getQuantity() == null || cusOrderLineDTO.getQuantity() < 1) {
+                log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. INVALID QUANTITY", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "CUSTOMER_ORDER_LINE_INVALID_QUANTITY");
+                return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            if (cusOrderLineDTO.getSellPrice() == null || cusOrderLineDTO.getSellPrice() < 1) {
+                cusOrderLineDTO.setSellPrice(product.getSalePrice());
+            }
+            // --------------- CREATING ORDER LINE OBJECT ---------------
+            CustomerOrderLine customerOrderLine = new CustomerOrderLine();
+            customerOrderLine.setCustomerOrder(customerOrder);
+            customerOrderLine.setProduct(product);
+            customerOrderLine.setSellPrice(cusOrderLineDTO.getSellPrice());
+            customerOrderLine.setQuantity(cusOrderLineDTO.getQuantity());
+            // --------------- SAVING DATA ---------------
+            log.debug("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. SAVING CUSTOMER ORDER LINE.", user.getUsername(), orderId, productId);
+            CustomerOrderLine savedLine = lineRepository.save(customerOrderLine);
+            // --------------- RETURNING DATA ---------------
+            CustomerOrderLineDTO savedLineDTO = CustomerOrderLineDTO.convert(savedLine);
+            createHATEOAS(savedLineDTO);
+            log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. CUSTOMER ORDER LINE SAVED.", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(savedLineDTO, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.info("User {} requested to create a new customer order line: orderId: '{}'; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        CustomerOrder customerOrder = orderOptional.get();
-        if (customerOrder.getSent() || customerOrder.getDeliveryDate().isAfter(LocalDate.now())) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}. " +
-                            "ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
-        // --------------- Product verification ---------------
-        Optional<Product> productOptional = pRepository.findById(productId);
-        if (!productOptional.isPresent()) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                            "PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        Product product = productOptional.get();
-        if (product.getStock() - cusOrderLineDTO.getQuantity() < 0) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                    "NOT ENOUGH STOCK", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-        // --------------- Others verification ---------------
-        if (lineRepository.existsByCustomerOrderIdAndProductId(customerOrder.getId(), product.getId())) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                            "ALREADY EXISTS.", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-        }
-        if (cusOrderLineDTO.getQuantity() == null || cusOrderLineDTO.getQuantity() < 1) {
-            log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                    "INVALID QUANTITY", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-        if (cusOrderLineDTO.getSellPrice() == null || cusOrderLineDTO.getSellPrice() <= 0) {
-            cusOrderLineDTO.setSellPrice(product.getSalePrice());
-        }
-        // --------------- CREATING ORDER LINE OBJECT ---------------
-        CustomerOrderLine customerOrderLine = new CustomerOrderLine();
-        customerOrderLine.setCustomerOrder(customerOrder);
-        customerOrderLine.setProduct(product);
-        customerOrderLine.setSellPrice(cusOrderLineDTO.getSellPrice());
-        customerOrderLine.setQuantity(cusOrderLineDTO.getQuantity());
-        // --------------- SAVING DATA ---------------
-        log.debug("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                        "SAVING CUSTOMER ORDER LINE.", user.getUsername(), orderId, productId);
-        CustomerOrderLine savedLine = lineRepository.save(customerOrderLine);
-        // --------------- RETURNING DATA ---------------
-        CustomerOrderLineDTO savedLineDTO = CustomerOrderLineDTO.convert(savedLine);
-        createHATEOAS(savedLineDTO);
-        log.info("User {} requested to create a new customer order line: orderId: {} ; productId: {}." +
-                        "CUSTOMER ORDER LINE SAVED.", user.getUsername(), orderId, productId);
-        return new ResponseEntity<>(savedLineDTO, HttpStatus.CREATED);
     }
 
     /**
@@ -264,32 +302,38 @@ public class CustomerOrderLineController {
      * Secondly, we check that the customer order is not already sent.
      *      If the order is already sent, we return an HttpStatus.NOT_ACCEPTABLE to the user.
      * Finally, we can delete the customer order line and return an HttpStatu.Accepted to the user.
+     *
      * @param orderId Corresponds to the id of the order that we want to delete the order line.
      * @param productId Corresponds to the id of the product that we want to delete the order line.
-     * @return A ResponseEntity object that contains an HttpStatus code and the corresponding data.
+     * @return a ResponseEntity containing an Error Message.
+     *      --> HttpStatus.OK if the customer order line has been deleted.
+     *      --> HttpStatus.BAD_REQUEST if no customer order line corresponds to the given id.
+     *      --> HttpStatus.PRECONDITION_FAILED if the customer order is already sent.
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerOrderLineDTO> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                              @PathVariable(value = "productId") Long productId,
-                                                                              @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to delete the customer order line: orderId: {} ; productId: {}.",
-                user.getUsername(), orderId, productId);
-        if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {
-            log.info("User {} requested to delete the customer order line: orderId: {} ; productId: {}. LINE NOT FOUND",
-                    user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+                                                           @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to delete the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
+            if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {
+                log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. LINE NOT FOUND", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "CUSTOMER_ORDER_LINE_NOT_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            if (coRepository.getCustomerOrderSentByCustomerId(orderId)) {
+                log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. ALREADY SENT", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
+            }
+            log.debug("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. DELETING DATA.", user.getUsername(), orderId, productId);
+            lineRepository.deleteByCustomerOrderIdAndProductId(orderId, productId);
+            log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. ORDER LINE DELETED.", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to delete the customer order line: orderId: '{}'; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        if (coRepository.getCustomerOrderSentByCustomerId(orderId)) {
-            log.info("User {} requested to delete the customer order line: orderId: {} ; productId: {}. ALREADY SENT",
-                    user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
-        log.debug("User {} requested to delete the customer order line: orderId: {} ; productId: {}. DELETING DATA.",
-                user.getUsername(), orderId, productId);
-        lineRepository.deleteByCustomerOrderIdAndProductId(orderId, productId);
-        log.info("User {} requested to delete the customer order line: orderId: {} ; productId: {}. ORDER LINE DELETED.",
-                user.getUsername(), orderId, productId);
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 }

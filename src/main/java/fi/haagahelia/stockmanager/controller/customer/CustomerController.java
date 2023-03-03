@@ -1,6 +1,7 @@
 package fi.haagahelia.stockmanager.controller.customer;
 
 import fi.haagahelia.stockmanager.controller.common.GeolocationController;
+import fi.haagahelia.stockmanager.dto.common.BodyMessage;
 import fi.haagahelia.stockmanager.dto.customer.CustomerCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.CustomerDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
@@ -9,10 +10,17 @@ import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.common.GeolocationRepository;
 import fi.haagahelia.stockmanager.repository.customer.CustomerRepository;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.util.Pair;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,7 +33,7 @@ import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-@Slf4j
+@Log4j2
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
@@ -80,23 +88,23 @@ public class CustomerController {
      * @return A Pair object that contains an HttpStatus and the decision reason.
      */
     private Pair<HttpStatus, String> validateCustomer(CustomerCuDTO customerCuDTO, boolean isForUpdate) {
-        if (customerCuDTO.getFirstName() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "FIRST NAME IS NULL.");
-        if (customerCuDTO.getFirstName().length() < 1) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "FIRST NAME IS EMPTY.");
-        if (customerCuDTO.getLastName() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "LAST NAME IS NULL.");
-        if (customerCuDTO.getLastName().length() < 1) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "LAST NAME IS EMPTY.");
-        if (customerCuDTO.getEmail() == null) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "EMAIL IS NULL.");
-        if (customerCuDTO.getEmail().length() < 1) return Pair.of(HttpStatus.UNPROCESSABLE_ENTITY, "EMAIL IS EMPTY");
+        if (customerCuDTO.getFirstName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_FIRST_NAME__NULL.");
+        if (customerCuDTO.getFirstName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_FIRST_NAME__EMPTY.");
+        if (customerCuDTO.getLastName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_LAST_NAME__NULL.");
+        if (customerCuDTO.getLastName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_LAST_NAME__EMPTY.");
+        if (customerCuDTO.getEmail() == null) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_EMAIL_NULL.");
+        if (customerCuDTO.getEmail().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "CUSTOMER_EMAIL_EMPTY");
         if (customerCuDTO.getGeolocationId() != null) {
             if (!gRepository.existsById(customerCuDTO.getGeolocationId())) {
-                return Pair.of(HttpStatus.NOT_FOUND, "NO GEOLOCATION FOUND");
+                return Pair.of(HttpStatus.NOT_FOUND, "CUSTOMER_GEOLOCATION_NOT_FOUND");
             }
         }
         if (isForUpdate) {
             if (!cRepository.existsByEmail(customerCuDTO.getEmail()))
-                return Pair.of(HttpStatus.NOT_FOUND, "CUSTOMER NOT FOUND.");
+                return Pair.of(HttpStatus.NOT_FOUND, "CUSTOMER_NOT_FOUND.");
         } else {
             if (cRepository.existsByEmail(customerCuDTO.getEmail()))
-                return Pair.of(HttpStatus.CONFLICT, "CUSTOMER ALREADY EXISTS.");
+                return Pair.of(HttpStatus.CONFLICT, "CUSTOMER_ALREADY_EXISTS.");
         }
         return Pair.of(HttpStatus.ACCEPTED, "");
     }
@@ -131,25 +139,49 @@ public class CustomerController {
      *      If the list is empty, we return an empty ResponseEntity with an HttpStatus.NO_CONTENT.
      * Thirdly, we transform all the customers as a CustomerDTO objects. We also add the HATEOAS links.
      * Finally, we return the data in a ResponseEntity with the HttpStatus.OK.
-     * @param user Corresponds to the user that is authenticated.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     *
+     * @param user authenticated Employee object
+     * @param searchQuery the search query, which can be null or an empty string
+     * @param pageable pagination information (page number, size, and sorting)
+     * @param sort sorting information for the query
+     * @return a ResponseEntity containing a page model of CustomerDTO objects or a Error Message.
+     *      --> HttpStatus.OK if at least one customer has been found. (Page of CustomerDTO)
+     *      --> HttpStatus.NO_CONTENT if no customer exists. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<List<CustomerDTO>> getAllCustomers(@AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting all the customers from the database.", user.getUsername());
-        List<Customer> customers = cRepository.findAll();
-        if (customers.size() < 1) {
-            log.info("User {} requested all the customers from the database. NO DATA FOUND", user.getUsername());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getCustomers(@AuthenticationPrincipal Employee user,
+                                                        @RequestParam(required = false) String searchQuery,
+                                                        @PageableDefault(size = 10) Pageable pageable,
+                                                        @SortDefault.SortDefaults({
+                                                                @SortDefault(sort = "email", direction = Sort.Direction.ASC)}) Sort sort) {
+        try {
+            log.info("User {} is requesting all the customers from the database.", user.getUsername());
+            Specification<Customer> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("email")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            Page<Customer> customers = cRepository.findAll(spec, pageable);
+            if (customers.getSize() < 1) {
+                log.info("User {} requested all the customers from the database. NO DATA FOUND", user.getUsername());
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
+            }
+            List<CustomerDTO> customerDTOS = new ArrayList<>();
+            for (Customer customer : customers) {
+                CustomerDTO customerDTO = CustomerDTO.convert(customer);
+                customerDTOS.add(createHATEOAS(customerDTO));
+            }
+            PagedModel.PageMetadata pmd = new PagedModel.PageMetadata(customers.getSize(), customers.getNumber(), customers.getTotalElements());
+            PagedModel<CustomerDTO> customerDTOPage = PagedModel.of(customerDTOS, pmd);
+            customerDTOPage.add(linkTo(CustomerController.class).withRel("customers"));
+            log.info("User {} requested all the customers. RETURNING DATA.", user.getUsername());
+            return new ResponseEntity<>(customerDTOPage, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested all the customers. UNEXPECTED ERROR!", user.getUsername());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        List<CustomerDTO> customerDTOS = new ArrayList<>();
-        for (Customer customer : customers) {
-            CustomerDTO customerDTO = CustomerDTO.convert(customer);
-            customerDTOS.add(createHATEOAS(customerDTO));
-        }
-        log.info("User {} requested all the customers from the database. RETURNING DATA.", user.getUsername());
-        return new ResponseEntity<>(customerDTOS, HttpStatus.OK);
     }
 
     /**
@@ -160,24 +192,33 @@ public class CustomerController {
      *      If it is empty, we return an HttpStatus.NO_CONTENT to the user.
      * Thirdly, we can convert the Customer to a CustomerDTO. We also add the HATEOAS links.
      * Finally, we return the data to the user with an HttpStatus.OK.
+     *
      * @param email Corresponds to the email address of the searched customer.
      * @param user Corresponds to the authenticated user.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a CustomerDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the customer exists. (CustomerDTO)
+     *      --> HttpStatus.BAD_REQUEST if no customer corresponds to the id. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{email}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerDTO> getCustomerById(@PathVariable(value = "email") String email,
-                                                                     @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting the customer with email: {}.", user.getUsername(), email);
-        Optional<Customer> customerOptional = cRepository.findByEmail(email);
-        if (!customerOptional.isPresent()) {
-            log.info("User {} requested the customer with email: {}. NO DATA FOUND.", user.getUsername(), email);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> getCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting the customer with email: '{}'.", user.getUsername(), email);
+            Optional<Customer> customerOptional = cRepository.findByEmail(email);
+            if (!customerOptional.isPresent()) {
+                log.info("User {} requested the customer with email: '{}'. NO DATA FOUND.", user.getUsername(), email);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            CustomerDTO customerDTO = CustomerDTO.convert(customerOptional.get());
+            createHATEOAS(customerDTO);
+            log.info("User {} requested the customer with email: '{}'. RETURNING DATA.", user.getUsername(), email);
+            return new ResponseEntity<>(customerDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested the customer with email: '{}'. UNEXPECTED ERROR!", user.getUsername(), email);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        CustomerDTO customerDTO = CustomerDTO.convert(customerOptional.get());
-        createHATEOAS(customerDTO);
-        log.info("User {} requested the customer with email: {}. RETURNING DATA.", user.getUsername(), email);
-        return new ResponseEntity<>(customerDTO, HttpStatus.OK);
     }
 
     /**
@@ -189,36 +230,38 @@ public class CustomerController {
      * Thirdly, we save the data in the database using the customer repository.
      * Fourthly, we convert the customer as a CustomerDTO, and we add the HATEOAS links.
      * Finally, we return the data to the user with an HttpStatus.CREATED.
+     *
      * @param customerCuDTO Corresponds to the new customer information that the user wants to save.
      * @param user Corresponds to the authenticated user.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a CustomerDTO objects or a Error Message.
+     *      --> HttpStatus.CREATED if the customer has been created. (CustomerDTO)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerCuDTO customerCuDTO,
-                                                                    @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to create and save a new customer with email: '{}'", user.getUsername(),
-                customerCuDTO.getEmail());
-        Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, false);
-        if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
-            log.info("User {} requested to create and save a new customer with email: '{}'. {}", user.getUsername(),
-                    customerCuDTO.getEmail(), validation.getSecond());
-            return new ResponseEntity<>(validation.getFirst());
+    public @ResponseBody ResponseEntity<?> createCustomer(@RequestBody CustomerCuDTO customerCuDTO, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to create and save a new customer with email: '{}'", user.getUsername(), customerCuDTO.getEmail());
+            Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, false);
+            if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
+                log.info("User {} requested to create and save a new customer with email: '{}'. {}", user.getUsername(), customerCuDTO.getEmail(), validation.getSecond());
+                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                return new ResponseEntity<>(bm, validation.getFirst());
+            }
+            Customer customer = new Customer(); customer.setFirstName(customerCuDTO.getFirstName());
+            customer.setLastName(customerCuDTO.getLastName()); customer.setEmail(customerCuDTO.getEmail());
+            setGeolocationById(customer, customerCuDTO.getGeolocationId(), user.getUsername());
+            log.debug("User {} requested to create and save a new customer with email: '{}'. SAVING CUSTOMER.", user.getUsername(), customer.getEmail());
+            Customer savedCustomer = cRepository.save(customer);
+            CustomerDTO customerDTO = CustomerDTO.convert(savedCustomer);
+            createHATEOAS(customerDTO);
+            log.info("User {} requested to create and save a new customer with email: '{}'. RETURNING DATA.", user.getUsername(), savedCustomer.getEmail());
+            return new ResponseEntity<>(customerDTO, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.info("User {} requested to create and save a new customer. UNEXPECTED ERROR!", user.getUsername());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Customer customer = new Customer();
-        customer.setFirstName(customerCuDTO.getFirstName());
-        customer.setLastName(customerCuDTO.getLastName());
-        customer.setEmail(customerCuDTO.getEmail());
-        setGeolocationById(customer, customerCuDTO.getGeolocationId(), user.getUsername());
-
-        log.debug("User {} requested to create and save a new customer with email: '{}'. SAVING CUSTOMER.",
-                user.getUsername(), customer.getEmail());
-        Customer savedCustomer = cRepository.save(customer);
-        CustomerDTO customerDTO = CustomerDTO.convert(savedCustomer);
-        createHATEOAS(customerDTO);
-        log.info("User {} requested to create and save a new customer with email: '{}'. RETURNING DATA.",
-                user.getUsername(), savedCustomer.getEmail());
-        return new ResponseEntity<>(customerDTO, HttpStatus.CREATED);
     }
 
     /**
@@ -229,39 +272,49 @@ public class CustomerController {
      * Thirdly, we modify the data of the customer.
      * Fourthly, we save the modification in the database.
      * Finally, we convert the customer as a CustomerDTO, we add the HATEOAS links, and we return it to the user.
+     *
      * @param email Corresponds to the email address of the customer that the user wants to update.
      * @param customerCuDTO Corresponds to the data of the customer that the user wants to update.
      * @param user Corresponds to the authenticated user.
-     * @return Corresponds to a ResponseEntity that contains the HttpStatus and data if they exist.
+     * @return a ResponseEntity containing a CustomerDTO objects or an Error Message.
+     *      --> HttpStatus.OK if the customer has been updated. (CustomerDTO)
+     *      --> HttpStatus.BAD_REQUEST if no customer corresponds to the given id. (ErrorMessage)
+     *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{email}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
-    public @ResponseBody ResponseEntity<CustomerDTO> updateCustomerById(@PathVariable(value = "email") String email,
-                                                                        @RequestBody CustomerCuDTO customerCuDTO,
-                                                                        @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to update the customer with email: '{}'.", user.getUsername(), email);
-        Optional<Customer> customerOptional = cRepository.findByEmail(email);
-        if (!customerOptional.isPresent()) {
-            log.info("User {} requested to update the customer with email: '{}'. NO CUSTOMER FOUND.",
-                    user.getUsername(), email);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public @ResponseBody ResponseEntity<?> updateCustomer(@PathVariable(value = "email") String email,
+                                                          @RequestBody CustomerCuDTO customerCuDTO,
+                                                          @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to update the customer with email: '{}'.", user.getUsername(), email);
+            Optional<Customer> customerOptional = cRepository.findByEmail(email);
+            if (!customerOptional.isPresent()) {
+                log.info("User {} requested to update the customer with email: '{}'. NO CUSTOMER FOUND.", user.getUsername(), email);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, true);
+            if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
+                log.info("User {} requested to update the customer with email: '{}'. {}.", user.getUsername(), email,
+                        validation.getSecond());
+                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                return new ResponseEntity<>(bm, validation.getFirst());
+            }
+            Customer customer = customerOptional.get();
+            customer.setFirstName(customerCuDTO.getFirstName()); customer.setLastName(customerCuDTO.getLastName());
+            setGeolocationById(customer, customerCuDTO.getGeolocationId(), user.getUsername());
+            log.debug("User {} requested to update the customer with email: '{}'. UPDATING CUSTOMER.", user.getUsername(), email);
+            Customer savedCustomer = cRepository.save(customer);
+            CustomerDTO customerDTO = CustomerDTO.convert(savedCustomer);
+            createHATEOAS(customerDTO);
+            log.info("User {} requested to update the customer with email: '{}'. CUSTOMER UPDATED.", user.getUsername(), email);
+            return new ResponseEntity<>(customerDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to update the customer with email: '{}'. UNEXPECTED ERROR!", user.getUsername(), email);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, true);
-        if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
-            log.info("User {} requested to update the customer with email: '{}'. {}.", user.getUsername(), email,
-                    validation.getSecond());
-            return new ResponseEntity<>(validation.getFirst());
-        }
-        Customer customer = customerOptional.get();
-        customer.setFirstName(customerCuDTO.getFirstName());
-        customer.setLastName(customerCuDTO.getLastName());
-        setGeolocationById(customer, customerCuDTO.getGeolocationId(), user.getUsername());
-        log.debug("User {} requested to update the customer with email: '{}'. UPDATING CUSTOMER.", user.getUsername(), email);
-        Customer savedCustomer = cRepository.save(customer);
-        CustomerDTO customerDTO = CustomerDTO.convert(savedCustomer);
-        createHATEOAS(customerDTO);
-        log.info("User {} requested to update the customer with email: '{}'. CUSTOMER UPDATED.", user.getUsername(), email);
-        return new ResponseEntity<>(customerDTO, HttpStatus.ACCEPTED);
     }
 
     /**
@@ -272,29 +325,35 @@ public class CustomerController {
      *      If not, we return an HttpStatus.NO_CONTENT to the user.
      * Thirdly, we delete the relation between the customer and all the related orders.
      * Finally, we can delete the customer from the database.
+     *
      * @param email Correspond to the email of the customer to be deleted.
-     * @return Return an empty ResponseEntity with the corresponding HttpStatus code.
+     * @return a ResponseEntity containing an Error Message.
+     *      --> HttpStatus.OK if the customer has been deleted.
+     *      --> HttpStatus.BAD_REQUEST if no customer corresponds to the given id.
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{email}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<CustomerDTO> deleteCustomerById(@PathVariable(value = "email") String email,
-                                                                        @AuthenticationPrincipal Employee user) {
-        log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);
-        Optional<Customer> customer = cRepository.findByEmail(email);
-        if (!customer.isPresent()) {
-            log.info("User {} requested to delete the customer with email: '{}'. NO DATA FOUND",
-                    user.getUsername(), email);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public @ResponseBody ResponseEntity<?> deleteCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);
+            Optional<Customer> customer = cRepository.findByEmail(email);
+            if (!customer.isPresent()) {
+                log.info("User {} requested to delete the customer with email: '{}'. NO DATA FOUND", user.getUsername(), email);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Customer toDelete = customer.get();
+            log.debug("User {} requested to delete the customer with email: '{}'. REMOVING RELATED ORDER.", user.getUsername(), email);
+            oRepository.removeRelatedCustomer(toDelete.getId());
+            log.debug("User {} requested to delete the customer with email: '{}'. DELETING DATA.", user.getUsername(), email);
+            cRepository.deleteById(toDelete.getId());
+            log.info("User {} requested to delete the customer with email: '{}'. CUSTOMER DELETED.", user.getUsername(), email);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to delete the customer with email: '{}'. UNEXPECTED ERROR!", user.getUsername(), email);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Customer toDelete = customer.get();
-        log.debug("User {} requested to delete the customer with email: '{}'. REMOVING RELATED ORDER.",
-                user.getUsername(), email);
-        oRepository.removeRelatedCustomer(toDelete.getId());
-        log.debug("User {} requested to delete the customer with email: '{}'. DELETING DATA.",
-                user.getUsername(), email);
-        cRepository.deleteById(toDelete.getId());
-        log.info("User {} requested to delete the customer with email: '{}'. CUSTOMER DELETED.",
-                user.getUsername(), email);
-        return new ResponseEntity<>(HttpStatus.OK);
+
     }
 }

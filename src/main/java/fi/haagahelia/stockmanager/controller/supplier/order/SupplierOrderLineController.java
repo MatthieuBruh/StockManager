@@ -50,8 +50,7 @@ public class SupplierOrderLineController {
     private final ProductRepository pRepository;
 
     @Autowired
-    public SupplierOrderLineController(SupplierOrderRepository soRepository,
-                                       SupplierOrderLineRepository soLineRepository, ProductRepository pRepository) {
+    public SupplierOrderLineController(SupplierOrderRepository soRepository, SupplierOrderLineRepository soLineRepository, ProductRepository pRepository) {
         this.soRepository = soRepository;
         this.soLineRepository = soLineRepository;
         this.pRepository = pRepository;
@@ -68,13 +67,10 @@ public class SupplierOrderLineController {
         Long orderId = lineDTO.getSupplierOrderDTO().getId();
         Long productId = lineDTO.getProductCompleteDTO().getId();
 
-        Link selfRel = linkTo(SupplierOrderLineController.class)
-                .slash("/" + orderId + "/details/product=" + productId).withSelfRel();
+        Link selfRel = linkTo(SupplierOrderLineController.class).slash("/" + orderId + "/details/product=" + productId).withSelfRel();
         lineDTO.add(selfRel);
 
-
-        Link orderDetailsLink = linkTo(SupplierOrderLineController.class)
-                .slash(orderId).slash("details").withRel("order-details");
+        Link orderDetailsLink = linkTo(SupplierOrderLineController.class).slash(orderId).slash("details").withRel("order-details");
         lineDTO.add(orderDetailsLink);
 
         Link orderLink = linkTo(SupplierOrderController.class).slash("orders").slash(orderId).withRel("order");
@@ -121,18 +117,23 @@ public class SupplierOrderLineController {
      * @param sort sorting information for the query
      * @return a ResponseEntity containing a page model of SupplierOrderLineDTO objects or a Error Message.
      *      --> HttpStatus.OK if at least one supplier order line has been found. (Page of SupplierOrderLineDTO)
+     *      --> HttpStatus.BAD_REQUEST if the supplier order does not exits. (ErrorMessage)
      *      --> HttpStatus.NO_CONTENT if no supplier order line exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{orderId}/details", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<?> getSupOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
-                                                            @RequestParam(required = false) String searchQuery,
-                                                            @PageableDefault(size = 10) Pageable pageable,
+                                                            @RequestParam(required = false) String searchQuery, @PageableDefault(size = 10) Pageable pageable,
                                                             @SortDefault.SortDefaults({
                                                                     @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting the order lines that corresponds to the order: '{}'.", user.getUsername(), orderId);
+            if (soRepository.existsById(orderId)) {
+                log.info("User {} requested the supplier order lines of the order: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
             Specification<SupplierOrderLine> spec = null;
             if (searchQuery != null && !searchQuery.isEmpty()) {
                 spec = (root, query, cb) -> cb.like(cb.lower(root.get("quantity")), "%" + searchQuery.toLowerCase() + "%");
@@ -169,7 +170,8 @@ public class SupplierOrderLineController {
      * @param user Corresponds to the authenticated user.
      * @return a ResponseEntity containing a SupplierOrderLineDTO objects or a Error Message.
      *      --> HttpStatus.OK if the supplier order line exists. (SupplierOrderLineDTO)
-     *      --> HttpStatus.BAD_REQUEST if no supplier order line corresponds to the id. (ErrorMessage)
+     *      --> HttpStatus.BAD_REQUEST if the supplier order or the product does not exit. (ErrorMessage)
+     *      --> HttpStatus.NO_CONTENT if no supplier order line corresponds to the id. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
@@ -179,11 +181,21 @@ public class SupplierOrderLineController {
                                                            @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the the line: supOrderId: '{}', productId: '{}'.", user.getUsername(), orderId, productId);
+            if (!soRepository.existsById(orderId)) {
+                log.info("User {} requested the supplier order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            if (!pRepository.existsById(productId)) {
+                log.info("User {} requested the supplier order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
+                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
             Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
             if (!orderLineOptional.isPresent()) {
                 log.info("User {} requested the the line: supOrderId: '{}', productId: '{}'. NO DATA FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
-                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             SupplierOrderLineDTO supplierOrderLineDTO = SupplierOrderLineDTO.convert(orderLineOptional.get());
             log.info("User {} requested the the line: supOrderId: '{}', productId: '{}'. RETURNING DATA.", user.getUsername(), orderId, productId);
@@ -329,12 +341,12 @@ public class SupplierOrderLineController {
             if (orderLine.getSupplierOrder().getOrderIsSent()) {
                 log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. ORDER IS ALREADY SENT.", user.getUsername(), orderId, productId);
                 BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT");
-                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.warn("User {} requested to delete the order line: supOrderId: {}, productId: {}. DELETING DATA.", user.getUsername(), orderId, productId);
             soLineRepository.deleteBySupplierOrderIdAndProductId(orderId, productId);
             log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. ORDER LINE DELETED.", user.getUsername(), orderId, productId);
-            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to delete the order line: orderId: '{}' ; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
