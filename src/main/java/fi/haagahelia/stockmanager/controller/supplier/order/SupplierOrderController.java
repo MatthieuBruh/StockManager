@@ -236,6 +236,7 @@ public class SupplierOrderController {
             if (searchQuery != null && !searchQuery.isEmpty()) {
                 spec = (root, query, cb) -> cb.like(cb.lower(root.get("id")), "%" + searchQuery.toLowerCase() + "%");
             }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id, spec, pageable);
             if (supplierOrders.getSize() < 1) {
                 log.info("User {} requested the orders related to the supplier: '{}'. NO DATA FOUND.", user.getUsername(), id);

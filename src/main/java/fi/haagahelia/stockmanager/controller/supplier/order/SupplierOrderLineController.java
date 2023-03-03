@@ -276,7 +276,7 @@ public class SupplierOrderLineController {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "INVALID QUANTITY", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_INVALID_QUANTITY");
-                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             if (orderCuDTO.getBuyPrice() == null || orderCuDTO.getBuyPrice() <= 0) {
                 orderCuDTO.setBuyPrice(product.getPurchasePrice());

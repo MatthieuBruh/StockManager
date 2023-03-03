@@ -13,6 +13,7 @@ import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderReposit
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -162,6 +163,7 @@ public class CustomerController {
             if (searchQuery != null && !searchQuery.isEmpty()) {
                 spec = (root, query, cb) -> cb.like(cb.lower(root.get("email")), "%" + searchQuery.toLowerCase() + "%");
             }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Customer> customers = cRepository.findAll(spec, pageable);
             if (customers.getSize() < 1) {
                 log.info("User {} requested all the customers from the database. NO DATA FOUND", user.getUsername());
