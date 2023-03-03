@@ -24,11 +24,15 @@ public class CustomEmployeeDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<Employee> employeeOptional = eRepository.findByUsername(username);
-        if (!employeeOptional.isPresent()) {
-            throw new UsernameNotFoundException(MessageFormat.format("No employee found with the username: {}", username));
-        }
+        try {
+            Optional<Employee> employeeOptional = eRepository.findByUsername(username);
+            if (!employeeOptional.isPresent()) {
+                throw new UsernameNotFoundException(MessageFormat.format("No employee found with the username: {}", username));
+            }
 
-        return employeeOptional.get();
+            return employeeOptional.get();
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred while retrieving user details", e);
+        }
     }
 }

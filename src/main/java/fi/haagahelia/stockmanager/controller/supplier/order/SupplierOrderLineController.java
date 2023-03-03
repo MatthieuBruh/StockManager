@@ -2,7 +2,7 @@ package fi.haagahelia.stockmanager.controller.supplier.order;
 
 
 import fi.haagahelia.stockmanager.controller.product.ProductController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderLineCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderLineDTO;
 import fi.haagahelia.stockmanager.model.product.Product;
@@ -131,7 +131,7 @@ public class SupplierOrderLineController {
             log.info("User {} is requesting the order lines that corresponds to the order: '{}'.", user.getUsername(), orderId);
             if (soRepository.existsById(orderId)) {
                 log.info("User {} requested the supplier order lines of the order: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Specification<SupplierOrderLine> spec = null;
@@ -142,7 +142,7 @@ public class SupplierOrderLineController {
             Page<SupplierOrderLine> supplierOrderLines = soLineRepository.findBySupplierOrderId(orderId, spec, pageable);
             if (supplierOrderLines.getSize() < 1) {
                 log.info("User {} requested to get all the lines of the order: '{}'. NO DATA FOUND", user.getUsername(), orderId);
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<SupplierOrderLineDTO> supplierOrderLineDTOSPage = convertOrderLines(supplierOrderLines);
@@ -183,18 +183,18 @@ public class SupplierOrderLineController {
             log.info("User {} is requesting the the line: supOrderId: '{}', productId: '{}'.", user.getUsername(), orderId, productId);
             if (!soRepository.existsById(orderId)) {
                 log.info("User {} requested the supplier order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (!pRepository.existsById(productId)) {
                 log.info("User {} requested the supplier order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
             if (!orderLineOptional.isPresent()) {
                 log.info("User {} requested the the line: supOrderId: '{}', productId: '{}'. NO DATA FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             SupplierOrderLineDTO supplierOrderLineDTO = SupplierOrderLineDTO.convert(orderLineOptional.get());
@@ -240,14 +240,14 @@ public class SupplierOrderLineController {
             if (!orderOptional.isPresent()) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "ORDER NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_NOT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             SupplierOrder supplierOrder = orderOptional.get();
             if (supplierOrder.getOrderIsSent() || supplierOrder.getDeliveryDate().isBefore(LocalDate.now())) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'. " +
                         "ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED.");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED.");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             // --------------- Product verifications ---------------
@@ -255,7 +255,7 @@ public class SupplierOrderLineController {
             if (!productOptional.isPresent()) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_NOT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Product product = productOptional.get();
@@ -263,19 +263,19 @@ public class SupplierOrderLineController {
             if (!Objects.equals(product.getSupplier().getId(), supplierOrder.getSupplier().getId())) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "PRODUCT IS NOT SUPPLIED BY THIS SUPPLIER.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_WRONG_SUPPLIER");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_WRONG_SUPPLIER");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             if (soLineRepository.existsBySupplierOrderIdAndProductId(orderId, productId)) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "ALREADY EXISTS.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_LINE_ALREADY_EXISTS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_LINE_ALREADY_EXISTS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             if (orderCuDTO.getQuantity() == null || orderCuDTO.getQuantity() < 1) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "INVALID QUANTITY", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_INVALID_QUANTITY");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_INVALID_QUANTITY");
                 return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
             }
             if (orderCuDTO.getBuyPrice() == null || orderCuDTO.getBuyPrice() <= 0) {
@@ -325,22 +325,22 @@ public class SupplierOrderLineController {
      */
     @DeleteMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                     @PathVariable(value = "productId") Long productId,
-                                                                     @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
+                                                                       @PathVariable(value = "productId") Long productId,
+                                                                       @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the order line: supOrderId: {}, productId: {}.",
                     user.getUsername(), orderId, productId);
             Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
             if (!orderLineOptional.isPresent()) {
                 log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. NO DATA FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_LINE_NOT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_LINE_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             SupplierOrderLine orderLine = orderLineOptional.get();
             if (orderLine.getSupplierOrder().getOrderIsSent()) {
                 log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. ORDER IS ALREADY SENT.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.warn("User {} requested to delete the order line: supOrderId: {}, productId: {}. DELETING DATA.", user.getUsername(), orderId, productId);

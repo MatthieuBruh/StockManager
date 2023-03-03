@@ -4,7 +4,7 @@ package fi.haagahelia.stockmanager.controller.product;
 import fi.haagahelia.stockmanager.controller.product.brand.BrandController;
 import fi.haagahelia.stockmanager.controller.product.category.CategoryController;
 import fi.haagahelia.stockmanager.controller.supplier.SupplierController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.product.ProductCompleteDTO;
 import fi.haagahelia.stockmanager.dto.product.ProductCuDTO;
 import fi.haagahelia.stockmanager.dto.product.ProductSimpleDTO;
@@ -214,7 +214,7 @@ public class ProductController {
             Page<Product> products = pRepository.findAll(spec, pageable);
             if (products.getSize() < 1) {
                 log.info("User {} requested all the products. NO DATA FOUND.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<ProductSimpleDTO> productsDTO = new ArrayList<>();
@@ -258,7 +258,7 @@ public class ProductController {
             Optional<Product> productOptional = pRepository.findById(id);
             if (!productOptional.isPresent()) {
                 log.info("User {} requested the product with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             ProductSimpleDTO productSimpleDTO = ProductSimpleDTO.convert(productOptional.get());
@@ -294,7 +294,7 @@ public class ProductController {
             log.info("User {} is requesting the detailed product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
             if (!productOptional.isPresent()) {
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             ProductCompleteDTO productCompleteDTO = ProductCompleteDTO.convert(productOptional.get());
@@ -331,7 +331,7 @@ public class ProductController {
             List<Product> lowStockProducts = pRepository.findByStockIsLessThanMinStock();
             if (lowStockProducts.size() < 1) {
                 log.info("User {} requested all the products that have a low stock. NO DATA FOUND", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_LOW_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_LOW_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<ProductCompleteDTO> productCompleteDTOS = new ArrayList<>();
@@ -376,7 +376,7 @@ public class ProductController {
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create the product with name: '{}'. {}",
                         user.getUsername(), productCuDTO.getName(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Brand brandOptional = bRepository.findById(productCuDTO.getBrandId()).get();
@@ -422,13 +422,13 @@ public class ProductController {
             log.info("User {} is requesting to update the product with id: '{}'.", user.getUsername(), id);
             if (!pRepository.existsById(id)) {
                 log.info("User {} requested to update the product with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Pair<HttpStatus, String> validation = validateProduct(productCuDTO);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to update the product with name: '{}'. {}", user.getUsername(), productCuDTO.getName(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Brand brandOptional = bRepository.findById(productCuDTO.getBrandId()).get();
@@ -472,12 +472,12 @@ public class ProductController {
             log.info("User {} is requesting to delete the product with id: '{}'.", user.getUsername(), id);
             if (!pRepository.existsById(id)) {
                 log.info("User {} requested to delete the product with id: '{}'. NO PRODUCT FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (solRepository.existsByProductId(id) || colRepository.existsByProductId(id)) {
                 log.info("User {} requested to delete the product with id: '{}'. PRODUCT HAS RELATIONS.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.debug("User {} requested to delete the product with id: '{}'. DELETING PRODUCT.", user.getUsername(), id);

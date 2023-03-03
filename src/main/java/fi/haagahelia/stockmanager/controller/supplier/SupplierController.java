@@ -2,7 +2,7 @@ package fi.haagahelia.stockmanager.controller.supplier;
 
 
 import fi.haagahelia.stockmanager.controller.common.GeolocationController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
@@ -160,7 +160,7 @@ public class SupplierController {
             Page<Supplier> suppliers = sRepository.findAll(spec, pageable);
             if (suppliers.getSize() < 1) {
                 log.info("User {} requested all the suppliers. NO DATA FOUND.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<SupplierDTO> supplierDTOS = new ArrayList<>();
@@ -202,7 +202,7 @@ public class SupplierController {
             Optional<Supplier> supplierOptional = sRepository.findById(id);
             if (!supplierOptional.isPresent()) {
                 log.info("User {} requested the supplier with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             SupplierDTO supplierDTO = SupplierDTO.convert(supplierOptional.get());
@@ -240,7 +240,7 @@ public class SupplierController {
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create and save a new supplier with the name: '{}'. '{}'",
                         user.getUsername(), supplierCuDTO.getName(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Supplier supplier = new Supplier();
@@ -291,13 +291,13 @@ public class SupplierController {
             Optional<Supplier> optionalSupplier = sRepository.findById(id);
             if (!optionalSupplier.isPresent()) {
                 log.info("User {} requested to update the supplier with name: '{}'. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, true);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to update the supplier with name: '{}'. {}", user.getUsername(), id, validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Supplier supplier = optionalSupplier.get();
@@ -335,17 +335,17 @@ public class SupplierController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the supplier with id: '{}'.", user.getUsername(), id);
             if (!sRepository.existsById(id)) {
                 log.info("User {} requested to delete the supplier with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (pRepository.existsBySupplierId(id)) {
                 log.info("User {} requested to delete the supplier with id: '{}'. PRODUCTS RELATED TO THIS SUPPLIER.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.debug("User {} requested to delete the supplier with id: '{}'. DELETING SUPPLIER.", user.getUsername(), id);

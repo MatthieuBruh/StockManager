@@ -1,6 +1,6 @@
 package fi.haagahelia.stockmanager.controller.product.brand;
 
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.product.brand.BrandCuDTO;
 import fi.haagahelia.stockmanager.dto.product.brand.BrandDTO;
 import fi.haagahelia.stockmanager.model.product.brand.Brand;
@@ -110,7 +110,7 @@ public class BrandController {
             Page<Brand> brands = bRepository.findAll(spec, pageable);
             if (brands.getSize() < 1) {
                 log.info("User {} requested all the brands. NO DATA FOUND", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_DATA_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_DATA_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<BrandDTO> brandDTOS = new ArrayList<>();
@@ -151,7 +151,7 @@ public class BrandController {
             Optional<Brand> brandOptional = bRepository.findById(id);
             if (!brandOptional.isPresent()) {
                 log.info("User {} requested the brand with id {}. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_DATA_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_DATA_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             BrandDTO brandDTO = BrandDTO.convert(brandOptional.get());
@@ -192,7 +192,7 @@ public class BrandController {
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create and save a new brand with the name: '{}'. {}.",
                         user.getUsername(), brandCuDTO.getName(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Brand brand = new Brand();
@@ -231,19 +231,19 @@ public class BrandController {
      */
     @DeleteMapping(value = ("/{id}"))
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteBrand(@PathVariable(name = "id") Long id,
-                                                              @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteBrand(@PathVariable(name = "id") Long id,
+                                                                   @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the brand with id: '{}'", user.getUsername(), id);
             if (!bRepository.existsById(id)) {
                 log.info("User {} requested to delete the brand with id : '{}'. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_DATA_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_DATA_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (pRepository.existsByBrandId(id)) {
                 log.info("User {} requested to delete the brand with id : '{}'. PRODUCTS RELATED TO THIS BRAND.",
                         user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "BRAND_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "BRAND_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.debug("User {} requested to delete the brand with id: '{}'. DELETING BRAND", user.getUsername(), id);

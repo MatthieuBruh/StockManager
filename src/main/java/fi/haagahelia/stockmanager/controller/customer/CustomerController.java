@@ -1,7 +1,7 @@
 package fi.haagahelia.stockmanager.controller.customer;
 
 import fi.haagahelia.stockmanager.controller.common.GeolocationController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.customer.CustomerCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.CustomerDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
@@ -165,7 +165,7 @@ public class CustomerController {
             Page<Customer> customers = cRepository.findAll(spec, pageable);
             if (customers.getSize() < 1) {
                 log.info("User {} requested all the customers from the database. NO DATA FOUND", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<CustomerDTO> customerDTOS = new ArrayList<>();
@@ -208,7 +208,7 @@ public class CustomerController {
             Optional<Customer> customerOptional = cRepository.findByEmail(email);
             if (!customerOptional.isPresent()) {
                 log.info("User {} requested the customer with email: '{}'. NO DATA FOUND.", user.getUsername(), email);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerDTO customerDTO = CustomerDTO.convert(customerOptional.get());
@@ -246,7 +246,7 @@ public class CustomerController {
             Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, false);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create and save a new customer with email: '{}'. {}", user.getUsername(), customerCuDTO.getEmail(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Customer customer = new Customer(); customer.setFirstName(customerCuDTO.getFirstName());
@@ -292,14 +292,14 @@ public class CustomerController {
             Optional<Customer> customerOptional = cRepository.findByEmail(email);
             if (!customerOptional.isPresent()) {
                 log.info("User {} requested to update the customer with email: '{}'. NO CUSTOMER FOUND.", user.getUsername(), email);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, true);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to update the customer with email: '{}'. {}.", user.getUsername(), email,
                         validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Customer customer = customerOptional.get();
@@ -340,7 +340,7 @@ public class CustomerController {
             Optional<Customer> customer = cRepository.findByEmail(email);
             if (!customer.isPresent()) {
                 log.info("User {} requested to delete the customer with email: '{}'. NO DATA FOUND", user.getUsername(), email);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Customer toDelete = customer.get();

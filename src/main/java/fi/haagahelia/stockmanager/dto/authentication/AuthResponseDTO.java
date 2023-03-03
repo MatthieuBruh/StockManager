@@ -1,16 +1,12 @@
 package fi.haagahelia.stockmanager.dto.authentication;
 
 
-import lombok.*;
+import lombok.Data;
+import lombok.NonNull;
 
 @Data
-@Getter
-@Setter
 public class AuthResponseDTO {
-    private String accessToken;
+    @NonNull
+    private String token;
     private String tokenType = "Bearer ";
-
-    public AuthResponseDTO(String accessToken) {
-        this.accessToken = accessToken;
-    }
 }

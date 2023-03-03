@@ -1,7 +1,7 @@
 package fi.haagahelia.stockmanager.controller.user;
 
 
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.user.EmployeeCuDTO;
 import fi.haagahelia.stockmanager.dto.user.EmployeeDTO;
 import fi.haagahelia.stockmanager.model.user.Employee;
@@ -146,7 +146,7 @@ public class EmployeeController {
             Page<Employee> employees = eRepository.findAll(spec, pageable);
             if (employees.getSize() < 1) {
                 log.info("User {} requested to get all employees. NO DATA FOUND.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<EmployeeDTO> employeeDTOS = new ArrayList<>();
@@ -190,7 +190,7 @@ public class EmployeeController {
             Optional<Employee> employeeOptional = eRepository.findById(id);
             if (!employeeOptional.isPresent()) {
                 log.info("User {} requested to get the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             EmployeeDTO employeeDTO = EmployeeDTO.convert(employeeOptional.get());
@@ -231,7 +231,7 @@ public class EmployeeController {
             Pair<HttpStatus, String> validation = validateEmployee(employeeCuDTO, false);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create a new employee with email: '{}'. {}", user.getUsername(), employeeCuDTO.getEmail(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Employee employee = new Employee();
@@ -285,19 +285,19 @@ public class EmployeeController {
             Optional<Employee> employeeOptional = eRepository.findById(id);
             if (!employeeOptional.isPresent()) {
                 log.info("User {} requested to update the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Pair<HttpStatus, String> validation = validateEmployee(employeeCuDTO, true);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to update the employee with id: '{}'. '{}'", user.getUsername(), id, validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Employee employee = employeeOptional.get();
             if (!employeeCuDTO.getEmail().equals(employee.getEmail()) || !employeeCuDTO.getUserName().equals(employee.getUsername())) {
                 log.info("User {} requested to update the employee with id: '{}'. USERNAME OR EMAIL IS NOT CORRECT.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "EMPLOYEE_USERNAME_OR_EMAIL_INCORRECT");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "EMPLOYEE_USERNAME_OR_EMAIL_INCORRECT");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             employee.setFirstName(employeeCuDTO.getFirstName());
@@ -338,7 +338,7 @@ public class EmployeeController {
             Optional<Employee> employeeOptional = eRepository.findById(id);
             if (!employeeOptional.isPresent()) {
                 log.info("User {} requested to activate the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Employee employee = employeeOptional.get();
@@ -373,13 +373,13 @@ public class EmployeeController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteEmployeeById(@PathVariable(value = "id") Long id,
-                                                                        @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id,
+                                                                          @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the employee with id: {}.", user.getUsername(), id);
             if (!eRepository.existsById(id)) {
                 log.info("User {} requested to delete the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             log.debug("User {} requested to delete the employee with id: '{}'. BLOCKING EMPLOYEE", user.getUsername(), id);

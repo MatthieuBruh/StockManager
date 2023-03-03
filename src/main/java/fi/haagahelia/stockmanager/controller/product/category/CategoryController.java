@@ -1,7 +1,7 @@
 package fi.haagahelia.stockmanager.controller.product.category;
 
 
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.product.category.CategoryCuDTO;
 import fi.haagahelia.stockmanager.dto.product.category.CategoryDTO;
 import fi.haagahelia.stockmanager.model.product.category.Category;
@@ -116,7 +116,7 @@ public class CategoryController {
             Page<Category> categories = cRepository.findAll(spec, pageable);
             if (categories.getSize() < 1) {
                 log.info("User {} requested all the categories. NO DATA FOUND", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CATEGORY_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<CategoryDTO> categoryDTOS = new ArrayList<>();
@@ -159,7 +159,7 @@ public class CategoryController {
             Optional<Category> categoryOptional = cRepository.findById(id);
             if (!categoryOptional.isPresent()) {
                 log.info("User {} requested the category with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CategoryDTO categoryDTO = CategoryDTO.convert(categoryOptional.get());
@@ -200,7 +200,7 @@ public class CategoryController {
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create and save a new category with the name: '{}'. {}",
                         user.getUsername(), categoryCuDTO.getName(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Category category = new Category();
@@ -247,7 +247,7 @@ public class CategoryController {
             Optional<Category> categoryOptional = cRepository.findById(id);
             if (!categoryOptional.isPresent()) {
                 log.info("User {} requested to update the category with the id: '{}'. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Category category = categoryOptional.get();
@@ -282,18 +282,18 @@ public class CategoryController {
      */
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteCategory(@PathVariable(value = "id") Long id,
-                                                          @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteCategory(@PathVariable(value = "id") Long id,
+                                                                      @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the category with id: '{}'", user.getUsername(), id);
             if (!cRepository.existsById(id)) {
                 log.info("User {} requested to delete the category with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (pRepository.existsByCategoryId(id)) {
                 log.info("User {} requested to delete the category with id : '{}'. PRODUCTS RELATED TO THIS CATEGORY.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "CATEGORY_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CATEGORY_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.debug("User {} requested to delete the category with id: '{}'. DELETING DATA.", user.getUsername(), id);

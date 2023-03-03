@@ -2,7 +2,7 @@ package fi.haagahelia.stockmanager.controller.customer.order;
 
 
 import fi.haagahelia.stockmanager.controller.product.ProductController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineDTO;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
@@ -130,7 +130,7 @@ public class CustomerOrderLineController {
             log.info("User {} is requesting the customer order lines of the order: {}.", user.getUsername(), orderId);
             if (!coRepository.existsById(orderId)) {
                 log.info("User {} requested the customer order lines of the order: {}. ORDER NOT FOUND.", user.getUsername(), orderId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Specification<CustomerOrderLine> spec = null;
@@ -141,7 +141,7 @@ public class CustomerOrderLineController {
             Page<CustomerOrderLine> customerOrderLines = lineRepository.findByCustomerOrderId(orderId, spec, pageable);
             if (customerOrderLines.getSize() < 1) {
                 log.info("User {} requested the customer order lines of the order: '{}'. NO LINES FOUND.", user.getUsername(), orderId);
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_LINES_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<CustomerOrderLineDTO> cusOrderLinesDTOS = convertCustomerOrderLines(customerOrderLines);
@@ -182,18 +182,18 @@ public class CustomerOrderLineController {
             log.info("User {} is requesting the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!coRepository.existsById(orderId)) {
                 log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (!pRepository.existsById(productId)) {
                 log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Optional<CustomerOrderLine> orderLine = lineRepository.findByCustomerOrderIdAndProductId(orderId, productId);
             if (!orderLine.isPresent()) {
                 log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. NO ORDER LINE FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             CustomerOrderLineDTO cusOrderLineDTO = CustomerOrderLineDTO.convert(orderLine.get());
@@ -238,37 +238,37 @@ public class CustomerOrderLineController {
             Optional<CustomerOrder> orderOptional = coRepository.findById(orderId);
             if (!orderOptional.isPresent()) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrder customerOrder = orderOptional.get();
             if (customerOrder.getSent() || customerOrder.getDeliveryDate().isAfter(LocalDate.now())) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             // --------------- Product verification ---------------
             Optional<Product> productOptional = pRepository.findById(productId);
             if (!productOptional.isPresent()) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Product product = productOptional.get();
             if (product.getStock() - cusOrderLineDTO.getQuantity() < 0) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. NOT ENOUGH STOCK", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_STOCK_TOO_LOW");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "PRODUCT_STOCK_TOO_LOW");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             // --------------- Others verification ---------------
             if (lineRepository.existsByCustomerOrderIdAndProductId(customerOrder.getId(), product.getId())) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ALREADY EXISTS.", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_LINE_ALREADY_EXIST");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_LINE_ALREADY_EXIST");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             if (cusOrderLineDTO.getQuantity() == null || cusOrderLineDTO.getQuantity() < 1) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. INVALID QUANTITY", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "CUSTOMER_ORDER_LINE_INVALID_QUANTITY");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "CUSTOMER_ORDER_LINE_INVALID_QUANTITY");
                 return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
             }
             if (cusOrderLineDTO.getSellPrice() == null || cusOrderLineDTO.getSellPrice() < 1) {
@@ -319,12 +319,12 @@ public class CustomerOrderLineController {
             log.info("User {} is requesting to delete the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {
                 log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. LINE NOT FOUND", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "CUSTOMER_ORDER_LINE_NOT_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "CUSTOMER_ORDER_LINE_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (coRepository.getCustomerOrderSentByCustomerId(orderId)) {
                 log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. ALREADY SENT", user.getUsername(), orderId, productId);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.debug("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. DELETING DATA.", user.getUsername(), orderId, productId);

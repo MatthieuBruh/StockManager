@@ -1,6 +1,6 @@
 package fi.haagahelia.stockmanager.controller.common;
 
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.common.GeolocationCuDTO;
 import fi.haagahelia.stockmanager.dto.common.GeolocationDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
@@ -131,7 +131,7 @@ public class GeolocationController {
             Page<Geolocation> geolocations = gRepository.findAll(spec, pageable);
             if (geolocations.getSize() < 1) {
                 log.info("User {} requested all the geolocations from the database. NO DATA FOUND.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<GeolocationDTO> geolocationDTOS = new ArrayList<>();
@@ -175,7 +175,7 @@ public class GeolocationController {
             Optional<Geolocation> geoFounded = gRepository.findById(id);
             if (!geoFounded.isPresent()) {
                 log.info("User {} requested the geolocation with id: '{}'. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             GeolocationDTO geolocationDTO = GeolocationDTO.convert(geoFounded.get());
@@ -214,7 +214,7 @@ public class GeolocationController {
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create and save a new geolocation ({} {}, {}, {}). {}", user.getUsername(),
                         geoCuDTO.getStreetName(), geoCuDTO.getStreetNumber(), geoCuDTO.getPostcode(), geoCuDTO.getCountry(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Geolocation geolocation = new Geolocation(); geolocation.setStreetName(geoCuDTO.getStreetName());
@@ -255,19 +255,19 @@ public class GeolocationController {
      */
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<BodyMessage> deleteGeolocation(@PathVariable(value = "id") Long id,
-                                                                       @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteGeolocation(@PathVariable(value = "id") Long id,
+                                                                         @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the geolocation with id: '{}'", user.getUsername(), id);
             if (!gRepository.existsById(id)) {
                 log.info("User {} requested to delete the geolocation with id: '{}'. NO DATA FOUND", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             if (cRepository.existsByGeolocationId(id) || sRepository.existsByGeolocationId(id)) {
                 log.info("User {} requested to delete the geolocation with id: '{}'. " +
                         "CUSTOMER OR SUPPLIER ARE STILL RELATED TO THIS GEOLOCATION.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "GEOLOCATION_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "GEOLOCATION_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.warn("User {} requested to delete the geolocation with the id: '{}'. DELETING GEOLOCATION.", user.getUsername(), id);

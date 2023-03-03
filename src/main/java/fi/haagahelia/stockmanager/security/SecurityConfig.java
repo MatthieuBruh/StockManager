@@ -1,5 +1,8 @@
 package fi.haagahelia.stockmanager.security;
 
+import fi.haagahelia.stockmanager.security.jwt.JWTAuthenticationEntryPoint;
+import fi.haagahelia.stockmanager.security.jwt.JWTAuthenticationFilter;
+import fi.haagahelia.stockmanager.security.jwt.JWTUtils;
 import fi.haagahelia.stockmanager.service.CustomEmployeeDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -29,20 +32,53 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /*private final JwtAuthEntryPoint authEntryPoint;
+    private final JWTUtils jwtUtils;
+    private final JWTAuthenticationEntryPoint jwtAuthEntryPoint;
     private final CustomEmployeeDetailsService userDetailsService;
 
     @Autowired
-    public SecurityConfig(JwtAuthEntryPoint authEntryPoint, CustomEmployeeDetailsService userDetailsService) {
-        this.authEntryPoint = authEntryPoint;
+    public SecurityConfig(JWTUtils jwtUtils, JWTAuthenticationEntryPoint jwtAuthEntryPoint, CustomEmployeeDetailsService userDetailsService) {
+        this.jwtUtils = jwtUtils;
+        this.jwtAuthEntryPoint = jwtAuthEntryPoint;
         this.userDetailsService = userDetailsService;
-    }*/
+    }
 
-    private final CustomEmployeeDetailsService userDetailsService;
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConf) throws Exception {
+        return authConf.getAuthenticationManager();
+    }
 
-    @Autowired
-    public SecurityConfig(CustomEmployeeDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JWTAuthenticationFilter jwtAuthenticationFilter() throws Exception {
+        return new JWTAuthenticationFilter(jwtUtils, userDetailsService);
+    }
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+        String hierarchy = "ROLE_ADMIN > ROLE_MANAGER \n ROLE_MANAGER > ROLE_VENDOR";
+        roleHierarchy.setHierarchy(hierarchy);
+        return roleHierarchy;
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        List<String> origins = new ArrayList<>(); origins.add("http://localhost:3000");
+        List<String> methods = new ArrayList<>();
+        methods.add("GET"); methods.add("POST"); methods.add("PUT"); methods.add("DELETE");
+        List<String> headers = new ArrayList<>(); headers.add("Authorization"); headers.add("Content-Type");
+        configuration.setAllowedOrigins(origins);
+        configuration.setAllowedMethods(methods);
+        configuration.setAllowedHeaders(headers);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
@@ -50,10 +86,7 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .cors(Customizer.withDefaults())
-                //.cors().disable()
-                //.csrf(AbstractHttpConfigurer::disable)
-                .exceptionHandling()
-                //.authenticationEntryPoint(authEntryPoint)
+                .exceptionHandling().authenticationEntryPoint(jwtAuthEntryPoint)
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -70,42 +103,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConf) throws Exception {
-        return authConf.getAuthenticationManager();
-    }
-
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
-    }
-
-
-    @Bean
-    public RoleHierarchy roleHierarchy() {
-        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
-        String hierarchy = "ROLE_ADMIN > ROLE_MANAGER \n ROLE_MANAGER > ROLE_VENDOR";
-        roleHierarchy.setHierarchy(hierarchy);
-        return roleHierarchy;
-    }
-
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = new ArrayList<>(); origins.add("http://localhost:3000");
-        List<String> methods = new ArrayList<>();
-        methods.add("GET"); methods.add("POST"); methods.add("PUT"); methods.add("DELETE");
-        List<String> headers = new ArrayList<>(); headers.add("Authorization"); headers.add("Content-Type");
-        configuration.setAllowedOrigins(origins);
-        configuration.setAllowedMethods(methods);
-        configuration.setAllowedHeaders(headers);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**",configuration);
-        return source;
-    }
 }

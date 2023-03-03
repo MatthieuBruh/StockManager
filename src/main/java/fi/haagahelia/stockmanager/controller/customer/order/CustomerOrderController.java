@@ -3,7 +3,7 @@ package fi.haagahelia.stockmanager.controller.customer.order;
 
 import fi.haagahelia.stockmanager.controller.customer.CustomerController;
 import fi.haagahelia.stockmanager.controller.user.EmployeeController;
-import fi.haagahelia.stockmanager.dto.common.BodyMessage;
+import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderDTO;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
@@ -152,7 +152,7 @@ public class CustomerOrderController {
             Page<CustomerOrder> customerOrders = coRepository.findAll(spec, pageable);
             if (customerOrders.getSize() < 1) {
                 log.info("User {} requested all the customer orders. NO DATA FOUND.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<CustomerOrderDTO> customerOrderDTOPage = convertList(customerOrders);
@@ -189,7 +189,7 @@ public class CustomerOrderController {
             Optional<CustomerOrder> orderOptional = coRepository.findById(id);
             if (!orderOptional.isPresent()) {
                 log.info("User {} requested the customer order with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrderDTO customerOrderDTO = CustomerOrderDTO.convert(orderOptional.get());
@@ -234,7 +234,7 @@ public class CustomerOrderController {
             log.info("User {} is requesting all the orders of the customer: {}.", user.getUsername(), id);
             if (!cRepository.existsById(id)) {
                 log.info("User {} requested all the orders of the customer: {}. NO CUSTOMER FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Specification<CustomerOrder> spec = null;
@@ -245,7 +245,7 @@ public class CustomerOrderController {
             Page<CustomerOrder> customerOrders = coRepository.findByCustomerId(id, spec, pageable);
             if (customerOrders.getSize() < 1) {
                 log.info("User {} requested all the orders of the customer: {}. NO ORDER FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<CustomerOrderDTO> customerOrderDTOSPage = convertList(customerOrders);
@@ -288,7 +288,7 @@ public class CustomerOrderController {
             log.info("User {} is requesting the customer orders with a delivery date of: '{}'.", user.getUsername(), date);
             if (date == null) {
                 log.info("User {} requested the customer orders with a delivery date that is null.", user.getUsername());
-                BodyMessage bm = new BodyMessage(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "URL_DELIVERY_DATE_NULL");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "URL_DELIVERY_DATE_NULL");
                 return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
             }
             Specification<CustomerOrder> spec = null;
@@ -299,7 +299,7 @@ public class CustomerOrderController {
             Page<CustomerOrder> orderList = coRepository.findByDeliveryDate(date, spec, pageable);
             if (orderList.getSize() < 1) {
                 log.info("User {} requested the customer orders with a delivery date of: '{}'. NO DATA FOUND.", user.getUsername(), date);
-                BodyMessage bm = new BodyMessage(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<CustomerOrderDTO> customerOrderDTOSPage = convertList(orderList);
@@ -338,7 +338,7 @@ public class CustomerOrderController {
             Pair<HttpStatus, String> validation = orderValidation(orderCuDTO);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create a new customer order, date: '{}'. {}", user.getUsername(), orderCuDTO.getDate(), validation.getSecond());
-                BodyMessage bm = new BodyMessage(validation.getFirst().getReasonPhrase(), validation.getSecond());
+                ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             CustomerOrder customerOrder = new CustomerOrder();
@@ -389,7 +389,7 @@ public class CustomerOrderController {
             Optional<CustomerOrder> orderOptional = coRepository.findById(id);
             if (!orderOptional.isPresent()) {
                 log.info("User {} requested to update the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrder customerOrder = orderOptional.get();
@@ -431,15 +431,15 @@ public class CustomerOrderController {
             return new ResponseEntity<>(convert, HttpStatus.OK);
         } catch (UnknownOrderException e) {
             log.info("User {} requested to send the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), orderId);
-            BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
             return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (ProductStockException e) {
             log.info("User {} requested to send the customer order with id: '{}'. NOT ENOUGH STOCK.", user.getUsername(), orderId);
-            BodyMessage bm = new BodyMessage(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
             return new ResponseEntity<>(bm, HttpStatus.NOT_MODIFIED);
         } catch (OrderStateException e) {
             log.info("User {} requested to send the customer order with id: '{}'. ORDER IS ALREADY SENT.", user.getUsername(), orderId);
-            BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
             return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
         } catch (Exception e) {
             log.info("User {} requested to send the customer order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId);
@@ -473,15 +473,15 @@ public class CustomerOrderController {
             return new ResponseEntity<>(convert, HttpStatus.OK);
         } catch (UnknownOrderException e) {
             log.info("User {} requested to cancel the shipment of the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), orderId);
-            BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
             return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (OrderStateException e) {
             log.info("User {} requested to cancel the shipment the customer order with id: '{}'. ORDER HAS NOT BEEN SENT.", user.getUsername(), orderId);
-            BodyMessage bm = new BodyMessage(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_NOT_SENT");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_NOT_SENT");
             return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
         } catch (ProductStockException e) {
             log.info("User {} requested to send the customer order with id: '{}'. {}.", user.getUsername(), orderId, e.getMessage());
-            BodyMessage bm = new BodyMessage(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.NOT_MODIFIED.getReasonPhrase(), "PRODUCT_STOCK_ERROR");
             return new ResponseEntity<>(bm, HttpStatus.NOT_MODIFIED);
         } catch (Exception e) {
             log.info("User {} requested to send the customer order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId);
@@ -515,13 +515,13 @@ public class CustomerOrderController {
             Optional<CustomerOrder> customerOrderOptional = coRepository.findById(id);
             if (!customerOrderOptional.isPresent()) {
                 log.info("User {} requested to delete the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrder customerOrder = customerOrderOptional.get();
             if (customerOrder.getDate().plusDays(3).isAfter(LocalDate.now())) {
                 log.info("User {} requested to delete the customer order with id: '{}'. ORDER TOO OLD.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_TOO_OLD");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_TOO_OLD");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.debug("User {} requested to delete the customer order with id: '{}'. DELETING CUSTOMER ORDER.",
@@ -558,7 +558,7 @@ public class CustomerOrderController {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);
             if (!coRepository.existsById(id)) {
                 log.info("User {} requested to delete the customer order with id: '{}'. NO CUSTOMER ORDER.", user.getUsername(), id);
-                BodyMessage bm = new BodyMessage(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             log.warn("User {} requested to delete the customer order with id: '{}'. DELETING CUSTOMER ORDER.", user.getUsername(), id);
