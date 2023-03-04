@@ -3,7 +3,7 @@ package fi.haagahelia.stockmanager.repository.common;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @TestPropertySource(locations = "classpath:application-test.properties")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Slf4j
-class GeolocationRepositoryTest {
+@Log4j2
+public class GeolocationRepositoryTest {
 
     @Autowired
     private GeolocationRepository gRepository;
@@ -33,7 +33,7 @@ class GeolocationRepositoryTest {
     private TestEntityManager testEntityManager;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         EntityManager em = testEntityManager.getEntityManager();
         Query geolocationDelete = em.createQuery("DELETE Geolocation  g");
         geolocationDelete.executeUpdate();
@@ -43,7 +43,7 @@ class GeolocationRepositoryTest {
      * This test is used to ensure that the geolocation repository can find the geolocation that corresponds to an id.
      */
     @Test
-    void findById() {
+    public void findById() {
         // Initialization
         Geolocation geolocation = new Geolocation("Ratapihantie", "13", "00520", "Helsinki", "Finland");
         log.debug("GEOLOCATION TEST - FIND BY ID - New geolocation created: " + geolocation);
@@ -70,7 +70,7 @@ class GeolocationRepositoryTest {
      * This test is used to ensure that the geolocation repository will not find a geolocation if we give a wrong id.
      */
     @Test
-    void notFoundById() {
+    public void notFoundById() {
         // Execution
         Optional<Geolocation> optionalGeolocation = gRepository.findById(99999L);
         // Verification
@@ -82,7 +82,7 @@ class GeolocationRepositoryTest {
      * This method is used to ensure that the geolocation repository can return if a specific geolocation exists.
      */
     @Test
-    void existsByStreetNameAndStreetNumberAndPostcodeAndCountry() {
+    public void existsByStreetNameAndStreetNumberAndPostcodeAndCountry() {
         // Initialization
         Geolocation geolocation = new Geolocation("Campus Battelle, Rue de la Tambourine", "17",
                 "1227", "Carouge", "Switzerland");
@@ -104,7 +104,7 @@ class GeolocationRepositoryTest {
      * This method is used to ensure that the geolocation repository can return if a specific geolocation exists.
      */
     @Test
-    void doesNotExistsByStreetNameAndStreetNumberAndPostcodeAndCountry() {
+    public void doesNotExistsByStreetNameAndStreetNumberAndPostcodeAndCountry() {
         // Execution
         Boolean result = gRepository.existsByStreetNameAndStreetNumberAndPostcodeAndCountry(
                 "DOES NOT EXIST", "XXX", "XXXXX", "NONE");

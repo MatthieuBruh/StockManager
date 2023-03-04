@@ -114,7 +114,7 @@ public class CategoryController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Category> categories = cRepository.findAll(spec, pageable);
-            if (categories.getSize() < 1) {
+            if (categories.getTotalElements() < 1) {
                 log.info("User {} requested all the categories. NO DATA FOUND", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

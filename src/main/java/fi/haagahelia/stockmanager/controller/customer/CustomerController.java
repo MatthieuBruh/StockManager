@@ -165,7 +165,7 @@ public class CustomerController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Customer> customers = cRepository.findAll(spec, pageable);
-            if (customers.getSize() < 1) {
+            if (customers.getTotalElements() < 1) {
                 log.info("User {} requested all the customers from the database. NO DATA FOUND", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

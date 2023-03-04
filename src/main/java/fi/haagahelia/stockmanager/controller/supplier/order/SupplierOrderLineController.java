@@ -19,7 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
@@ -112,7 +111,6 @@ public class SupplierOrderLineController {
      *
      * @param orderId Corresponds to the order id
      * @param user authenticated Employee object
-     * @param searchQuery the search query, which can be null or an empty string
      * @param pageable pagination information (page number, size, and sorting)
      * @param sort sorting information for the query
      * @return a ResponseEntity containing a page model of SupplierOrderLineDTO objects or a Error Message.
@@ -124,23 +122,19 @@ public class SupplierOrderLineController {
     @GetMapping(value = "/{orderId}/details", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<?> getSupOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
-                                                            @RequestParam(required = false) String searchQuery, @PageableDefault(size = 10) Pageable pageable,
+                                                            @PageableDefault(size = 10) Pageable pageable,
                                                             @SortDefault.SortDefaults({
                                                                     @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting the order lines that corresponds to the order: '{}'.", user.getUsername(), orderId);
-            if (soRepository.existsById(orderId)) {
+            if (!soRepository.existsById(orderId)) {
                 log.info("User {} requested the supplier order lines of the order: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
-            Specification<SupplierOrderLine> spec = null;
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                spec = (root, query, cb) -> cb.like(cb.lower(root.get("quantity")), "%" + searchQuery.toLowerCase() + "%");
-            }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<SupplierOrderLine> supplierOrderLines = soLineRepository.findBySupplierOrderId(orderId, spec, pageable);
-            if (supplierOrderLines.getSize() < 1) {
+            Page<SupplierOrderLine> supplierOrderLines = soLineRepository.findBySupplierOrderId(orderId, pageable);
+            if (supplierOrderLines.getTotalElements() < 1) {
                 log.info("User {} requested to get all the lines of the order: '{}'. NO DATA FOUND", user.getUsername(), orderId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -151,6 +145,7 @@ public class SupplierOrderLineController {
             return new ResponseEntity<>(supplierOrderLineDTOSPage, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to get all the lines of the order: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId);
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -176,8 +171,7 @@ public class SupplierOrderLineController {
      */
     @GetMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<?> getSupOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                           @PathVariable(value = "productId") Long productId,
+    public @ResponseBody ResponseEntity<?> getSupOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                            @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the the line: supOrderId: '{}', productId: '{}'.", user.getUsername(), orderId, productId);

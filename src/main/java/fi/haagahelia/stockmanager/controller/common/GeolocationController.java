@@ -129,7 +129,7 @@ public class GeolocationController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Geolocation> geolocations = gRepository.findAll(spec, pageable);
-            if (geolocations.getSize() < 1) {
+            if (geolocations.getTotalElements() < 1) {
                 log.info("User {} requested all the geolocations from the database. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

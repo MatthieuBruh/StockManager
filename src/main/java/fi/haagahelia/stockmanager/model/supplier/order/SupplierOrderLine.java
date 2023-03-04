@@ -41,6 +41,7 @@ public class SupplierOrderLine {
         this.buyPrice = buyPrice;
         this.supplierOrder = supplierOrder;
         this.product = product;
+        this.supplierOrderLinePK = new SupplierOrderLinePK(supplierOrder.getId(), product.getId());
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */

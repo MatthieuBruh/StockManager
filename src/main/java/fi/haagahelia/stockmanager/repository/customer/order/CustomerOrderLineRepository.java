@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface CustomerOrderLineRepository extends JpaRepository<CustomerOrderLine, Long> {
-    Page<CustomerOrderLine> findByCustomerOrderId(Long id, Specification<CustomerOrderLine> spec, Pageable pageable);
+    Page<CustomerOrderLine> findByCustomerOrderId(Long id, Pageable pageable);
     Optional<CustomerOrderLine> findByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);
     Boolean existsByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);
     void deleteByCustomerOrderIdAndProductId(Long customerOrderId, Long productId);

@@ -1,14 +1,11 @@
 package fi.haagahelia.stockmanager.repository.supplier.order;
 
-import fi.haagahelia.stockmanager.model.product.Product;
-import fi.haagahelia.stockmanager.model.product.brand.Brand;
-import fi.haagahelia.stockmanager.model.product.category.Category;
+
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
-import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @TestPropertySource(locations = "classpath:application-test.properties")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Slf4j
+@Log4j2
 public class SupplierOrderRepositoryTest {
 
     @Autowired

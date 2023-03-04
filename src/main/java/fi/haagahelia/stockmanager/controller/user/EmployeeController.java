@@ -64,7 +64,6 @@ public class EmployeeController {
         Link selfLink = linkTo(EmployeeController.class).slash(String.valueOf(employeeDTO.getId())).withSelfRel();
         employeeDTO.add(selfLink);
         Link collectionLink = linkTo(EmployeeController.class).slash("").withRel("employees");
-        // Link collectionLink = linkTo(methodOn(EmployeeController.class)).slash("/").withRel("employees");
         employeeDTO.add(collectionLink);
         return employeeDTO;
     }
@@ -144,7 +143,7 @@ public class EmployeeController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Employee> employees = eRepository.findAll(spec, pageable);
-            if (employees.getSize() < 1) {
+            if (employees.getTotalElements() < 1) {
                 log.info("User {} requested to get all employees. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

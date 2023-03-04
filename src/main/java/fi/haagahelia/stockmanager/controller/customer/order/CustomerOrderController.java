@@ -150,7 +150,7 @@ public class CustomerOrderController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<CustomerOrder> customerOrders = coRepository.findAll(spec, pageable);
-            if (customerOrders.getSize() < 1) {
+            if (customerOrders.getTotalElements() < 1) {
                 log.info("User {} requested all the customer orders. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -243,7 +243,7 @@ public class CustomerOrderController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<CustomerOrder> customerOrders = coRepository.findByCustomerId(id, spec, pageable);
-            if (customerOrders.getSize() < 1) {
+            if (customerOrders.getTotalElements() < 1) {
                 log.info("User {} requested all the orders of the customer: {}. NO ORDER FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -297,7 +297,7 @@ public class CustomerOrderController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<CustomerOrder> orderList = coRepository.findByDeliveryDate(date, spec, pageable);
-            if (orderList.getSize() < 1) {
+            if (orderList.getTotalElements() < 1) {
                 log.info("User {} requested the customer orders with a delivery date of: '{}'. NO DATA FOUND.", user.getUsername(), date);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

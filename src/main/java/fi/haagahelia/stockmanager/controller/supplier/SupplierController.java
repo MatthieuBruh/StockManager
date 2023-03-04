@@ -158,7 +158,7 @@ public class SupplierController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Supplier> suppliers = sRepository.findAll(spec, pageable);
-            if (suppliers.getSize() < 1) {
+            if (suppliers.getTotalElements() < 1) {
                 log.info("User {} requested all the suppliers. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

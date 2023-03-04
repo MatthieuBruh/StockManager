@@ -212,7 +212,7 @@ public class ProductController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Product> products = pRepository.findAll(spec, pageable);
-            if (products.getSize() < 1) {
+            if (products.getTotalElements() < 1) {
                 log.info("User {} requested all the products. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

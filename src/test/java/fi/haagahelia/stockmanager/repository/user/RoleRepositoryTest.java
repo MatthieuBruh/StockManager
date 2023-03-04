@@ -3,6 +3,7 @@ package fi.haagahelia.stockmanager.repository.user;
 import fi.haagahelia.stockmanager.model.user.Role;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @TestPropertySource(locations = "classpath:application-test.properties")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Slf4j
+@Log4j2
 public class RoleRepositoryTest {
 
     @Autowired

@@ -108,7 +108,7 @@ public class BrandController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<Brand> brands = bRepository.findAll(spec, pageable);
-            if (brands.getSize() < 1) {
+            if (brands.getTotalElements() < 1) {
                 log.info("User {} requested all the brands. NO DATA FOUND", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_DATA_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);

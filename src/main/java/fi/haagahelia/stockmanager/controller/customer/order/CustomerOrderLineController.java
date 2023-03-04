@@ -122,7 +122,6 @@ public class CustomerOrderLineController {
     @GetMapping(value = "/details",produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_VENDOR')")
     public @ResponseBody ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
-                                                         @RequestParam(required = false) String searchQuery,
                                                          @PageableDefault(size = 10) Pageable pageable,
                                                          @SortDefault.SortDefaults({
                                                                  @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
@@ -133,13 +132,9 @@ public class CustomerOrderLineController {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
-            Specification<CustomerOrderLine> spec = null;
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                spec = (root, query, cb) -> cb.like(cb.lower(root.get("quantity")), "%" + searchQuery.toLowerCase() + "%");
-            }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<CustomerOrderLine> customerOrderLines = lineRepository.findByCustomerOrderId(orderId, spec, pageable);
-            if (customerOrderLines.getSize() < 1) {
+            Page<CustomerOrderLine> customerOrderLines = lineRepository.findByCustomerOrderId(orderId, pageable);
+            if (customerOrderLines.getTotalElements() < 1) {
                 log.info("User {} requested the customer order lines of the order: '{}'. NO LINES FOUND.", user.getUsername(), orderId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
