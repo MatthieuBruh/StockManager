@@ -325,25 +325,39 @@ public class ProductController {
      */
     @GetMapping(value = "/low", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<?> getLowStockProd(@AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> getLowStockProd(@AuthenticationPrincipal Employee user,
+                                                           @RequestParam(required = false) String searchQuery,
+                                                           @PageableDefault(size = 10) Pageable pageable,
+                                                           @SortDefault.SortDefaults({
+                                                                   @SortDefault(sort = "stock", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the products that have a low stock.", user.getUsername());
-            List<Product> lowStockProducts = pRepository.findByStockIsLessThanMinStock();
-            if (lowStockProducts.size() < 1) {
+            Specification<Product> spec = null;
+            if (searchQuery != null && !searchQuery.isEmpty()) {
+                spec = (root, query, cb) -> cb.like(cb.lower(root.get("stock")), "%" + searchQuery.toLowerCase() + "%");
+            }
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Page<Product> lowStock = pRepository.findByStockIsLessThanMinStock(spec, pageable);
+            if (lowStock.getTotalElements() < 1) {
                 log.info("User {} requested all the products that have a low stock. NO DATA FOUND", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_LOW_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             List<ProductCompleteDTO> productCompleteDTOS = new ArrayList<>();
-            for (Product product : lowStockProducts) {
+            for (Product product : lowStock) {
                 ProductCompleteDTO productCompleteDTO = ProductCompleteDTO.convert(product);
                 createHATEOAS(productCompleteDTO);
                 productCompleteDTOS.add(productCompleteDTO);
             }
+            PagedModel.PageMetadata pmd = new PagedModel.PageMetadata(lowStock.getSize(), lowStock.getNumber(), lowStock.getTotalElements());
+            PagedModel<ProductCompleteDTO> productDTOPage = PagedModel.of(productCompleteDTOS, pmd);
+            productDTOPage.add(linkTo(ProductController.class).slash("low").withSelfRel());
             log.info("User {} requested all the products that have a low stock. RETURNING DATA.", user.getUsername());
-            return new ResponseEntity<>(productCompleteDTOS, HttpStatus.OK);
+            return new ResponseEntity<>(productDTOPage, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested all the products that have a low stock. UNEXPECTED ERROR!", user.getUsername());
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

@@ -14,10 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -186,14 +187,14 @@ public class ProductRepositoryTest {
 
         em.getTransaction().commit();
         // Execution
-        List<Product> productsFound = pRepository.findByStockIsLessThanMinStock();
+        Page<Product> productsFound = pRepository.findByStockIsLessThanMinStock(null, PageRequest.of(0, 10));
         // Verification
         log.debug("PRODUCT TEST - FIND BY STOCK IS LOW - Products found verifications");
         assertNotNull(productsFound);
-        assertTrue(productsFound.size() > 0); assertEquals(2, productsFound.size());
-        assertTrue(productsFound.contains(rtx4090));
-        assertTrue(productsFound.contains(rtx3090));
-        assertFalse(productsFound.contains(rtx2070));
+        assertTrue(productsFound.getTotalElements() > 0); assertEquals(2, productsFound.getTotalElements());
+        assertTrue(productsFound.getContent().contains(rtx4090));
+        assertTrue(productsFound.getContent().contains(rtx3090));
+        assertFalse(productsFound.getContent().contains(rtx2070));
     }
 
     /**

@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.hateoas.Link;
@@ -317,7 +316,7 @@ public class CustomerOrderLineController {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "CUSTOMER_ORDER_LINE_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
-            if (coRepository.getCustomerOrderSentByCustomerId(orderId)) {
+            if (coRepository.isCustomerOrderSentByOrderId(orderId)) {
                 log.info("User {} requested to delete the customer order line: orderId: '{}' ; productId: '{}'. ALREADY SENT", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);

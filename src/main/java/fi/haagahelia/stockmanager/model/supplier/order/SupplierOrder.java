@@ -4,6 +4,7 @@ import fi.haagahelia.stockmanager.model.supplier.Supplier;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,13 +37,13 @@ public class SupplierOrder {
     @JoinColumn(name = "suo_sup_id")
     private Supplier supplier;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "supplierOrder")
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "supplierOrder")
     private List<SupplierOrderLine> supplierOrderLines;
 
 
     /* ------------------------------------------------ CONSTRUCTORS ------------------------------------------------ */
 
-    public SupplierOrder() { }
+    public SupplierOrder() { this.supplierOrderLines = new ArrayList<>(); }
 
     public SupplierOrder(LocalDate date, LocalDate deliveryDate, Boolean orderIsSent, Boolean isReceived, Supplier supplier) {
         this.date = date;
@@ -50,6 +51,7 @@ public class SupplierOrder {
         this.orderIsSent = orderIsSent;
         this.isReceived = isReceived;
         this.supplier = supplier;
+        this.supplierOrderLines = new ArrayList<>();
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -65,6 +67,17 @@ public class SupplierOrder {
     @Override
     public int hashCode() {
         return Objects.hash(date, deliveryDate, supplier);
+    }
+
+    @Override
+    public String toString() {
+        return "SupplierOrder{" +
+                "id=" + id +
+                ", date=" + date +
+                ", deliveryDate=" + deliveryDate +
+                ", orderIsSent=" + orderIsSent +
+                ", isReceived=" + isReceived +
+                '}';
     }
 
     /* ---------------------------------------------- GETTERS & SETTERS --------------------------------------------- */

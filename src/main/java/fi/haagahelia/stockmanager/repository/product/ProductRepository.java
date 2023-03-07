@@ -17,7 +17,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
     Boolean existsByNameAndSupplierId(String name, Long id);
     @Query(value = "SELECT p FROM Product p WHERE p.stock <= p .minStock")
-    List<Product> findByStockIsLessThanMinStock();
+    Page<Product> findByStockIsLessThanMinStock(Specification<Product> spec, Pageable pageable);
 
     Boolean existsByBrandId(Long id);
     Boolean existsByCategoryId(Long id);

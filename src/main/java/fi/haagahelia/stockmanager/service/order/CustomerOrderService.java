@@ -9,19 +9,24 @@ import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderManagerRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Repository;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 
-@Slf4j
-@Repository
-public class CustomerOrderManagerImpl implements CustomerOrderManagerRepository {
+@Log4j2
+@Service
+public class CustomerOrderService implements CustomerOrderManagerRepository {
 
     @PersistenceContext
     private EntityManager em;
+
+    public void setEm(EntityManager em) {
+        this.em = em;
+    }
 
     /**
      * This function is used to considerate an order as shipped.
@@ -38,8 +43,7 @@ public class CustomerOrderManagerImpl implements CustomerOrderManagerRepository 
      */
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public CustomerOrder customerOrderShipment(Long orderId)
-            throws UnknownOrderException, ProductStockException, OrderStateException {
+    public CustomerOrder customerOrderShipment(Long orderId) throws UnknownOrderException, ProductStockException, OrderStateException {
         log.debug("Shipment of the customer order with id: " + orderId);
         CustomerOrder customerOrder = em.find(CustomerOrder.class, orderId);
         if (customerOrder == null) {
@@ -50,7 +54,8 @@ public class CustomerOrderManagerImpl implements CustomerOrderManagerRepository 
             log.debug("The customer order: {}, has already been sent.", orderId);
             throw new OrderStateException("The customer order: " + orderId + " is already sent.");
         }
-        List<CustomerOrderLine> customerOrderLines = customerOrder.getCustomerOrderLines();
+        Query query = em.createQuery("SELECT line FROM CustomerOrderLine line WHERE line.customerOrder.id = ?1").setParameter(1, orderId);
+        List<CustomerOrderLine> customerOrderLines = query.getResultList();
         if (customerOrderLines.size() < 1) {
             log.debug("The customer order: {}, must have at least one order line.", orderId);
             throw new ProductStockException("The customer order " + orderId + ", must have at least one order line.");
@@ -88,8 +93,7 @@ public class CustomerOrderManagerImpl implements CustomerOrderManagerRepository 
      */
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public CustomerOrder customerOrderShipmentCancel(Long orderId)
-            throws UnknownOrderException, OrderStateException, ProductStockException {
+    public CustomerOrder customerOrderShipmentCancel(Long orderId) throws UnknownOrderException, OrderStateException, ProductStockException {
         log.debug("Cancellation of the shipment  the customer order with id: " + orderId);
         CustomerOrder customerOrder = em.find(CustomerOrder.class, orderId);
         if (customerOrder == null) {
@@ -100,7 +104,8 @@ public class CustomerOrderManagerImpl implements CustomerOrderManagerRepository 
             log.debug("The customer order: {}, has not been sent.", orderId);
             throw new OrderStateException("The customer order: " + orderId + " has not been sent.");
         }
-        List<CustomerOrderLine> customerOrderLines = customerOrder.getCustomerOrderLines();
+        Query query = em.createQuery("SELECT line FROM CustomerOrderLine line WHERE line.customerOrder.id = ?1").setParameter(1, orderId);
+        List<CustomerOrderLine> customerOrderLines = query.getResultList();
         try {
             for (CustomerOrderLine orderLine : customerOrderLines) {
                 Product product = orderLine.getProduct();

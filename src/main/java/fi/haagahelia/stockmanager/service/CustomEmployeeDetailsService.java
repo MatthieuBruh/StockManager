@@ -27,7 +27,7 @@ public class CustomEmployeeDetailsService implements UserDetailsService {
         try {
             Optional<Employee> employeeOptional = eRepository.findByUsername(username);
             if (!employeeOptional.isPresent()) {
-                throw new UsernameNotFoundException(MessageFormat.format("No employee found with the username: {}", username));
+                throw new UsernameNotFoundException("No employee found with the username: " + username);
             }
 
             return employeeOptional.get();

@@ -62,6 +62,7 @@ public class Employee implements UserDetails {
         this.password = password;
         this.isActive = isActive;
         this.isBlocked = isBlocked;
+        this.roles = new ArrayList<>();
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */

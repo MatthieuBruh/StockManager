@@ -9,19 +9,28 @@ import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceContextType;
+import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 
-@Slf4j
-@Repository
-public class SupplierOrderManagerImpl implements SupplierOrderManagerRepository {
+@Log4j2
+@Service
+public class SupplierOrderService implements SupplierOrderManagerRepository {
 
-    @PersistenceContext
+
+    @PersistenceContext(type = PersistenceContextType.EXTENDED)
     private EntityManager em;
+
+    public void setEm(EntityManager em) {
+        this.em = em;
+    }
 
     /**
      * This function is used to save the fact that a supplier order has been sent.
@@ -40,11 +49,16 @@ public class SupplierOrderManagerImpl implements SupplierOrderManagerRepository 
         SupplierOrder supplierOrder = em.find(SupplierOrder.class, orderId);
         if (supplierOrder == null) {
             log.debug("Supplier order with id: {} was not found.", orderId);
-            throw new UnknownOrderException("The supplier order with id: " + orderId + " was not found.");
+            throw new UnknownOrderException("The supplier order with id: " + orderId + ", was not found.");
         }
-        if (supplierOrder.getSupplierOrderLines().size() < 1) {
+        if (supplierOrder.getOrderIsSent()) {
+            log.debug("Supplier order with id: {} , is already sent", orderId);
+            throw new OrderStateException("The supplier order with id: " + orderId + ", is already sent.");
+        }
+        Query query = em.createQuery("SELECT line FROM SupplierOrderLine line where line.supplierOrder.id = ?1").setParameter(1, orderId);
+        if (query.getResultList().size() < 1) {
             log.debug("Supplier order with id: {} has no order lines", orderId);
-            throw new OrderStateException("The supplier order with id: " + orderId + " has no order lines.");
+            throw new OrderStateException("The supplier order with id: " + orderId + ", has no order lines.");
         }
         supplierOrder.setOrderIsSent(true);
         em.persist(supplierOrder);
@@ -82,7 +96,8 @@ public class SupplierOrderManagerImpl implements SupplierOrderManagerRepository 
             throw new OrderStateException("The supplier order: " + orderId + " has not been sent.");
         }
         supplierOrder.setReceived(true);
-        List<SupplierOrderLine> orderLines = supplierOrder.getSupplierOrderLines();
+        Query query = em.createQuery("SELECT line FROM SupplierOrderLine line where line.supplierOrder.id = ?1").setParameter(1, orderId);
+        List<SupplierOrderLine> orderLines = query.getResultList();
         if (orderLines.size() < 1) {
             throw new ProductStockException("The supplier order " + orderId + ", must have at least one order line.");
         }
@@ -125,15 +140,16 @@ public class SupplierOrderManagerImpl implements SupplierOrderManagerRepository 
             throw new OrderStateException("The supplier order: " + orderId + " is not received.");
         }
         supplierOrder.setReceived(false);
-        List<SupplierOrderLine> orderLines = supplierOrder.getSupplierOrderLines();
+        Query query = em.createQuery("SELECT line FROM SupplierOrderLine line where line.supplierOrder.id = ?1").setParameter(1, orderId);
+        List<SupplierOrderLine> orderLines = query.getResultList();
         try {
             for (SupplierOrderLine line : orderLines) {
                 Product product = line.getProduct();
-                Integer stockIncrement = line.getQuantity() * product.getBatchSize();
-                product.setStock(product.getStock() - stockIncrement);
-                if (product.getStock() - stockIncrement < 0) {
+                Integer stockDecrement = line.getQuantity() * product.getBatchSize();
+                if (product.getStock() - stockDecrement < 0) {
                     throw new ProductStockException("Product " + product.getId() + " cannot have a negative stock.");
                 }
+                product.setStock(product.getStock() - stockDecrement);
                 em.persist(product);
             }
         } catch (Exception e) {

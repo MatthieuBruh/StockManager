@@ -13,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +57,6 @@ public class SupplierOrderRepositoryTest {
         Supplier quinu = new Supplier("Quinu", "struss0@i2i.jp", null, null);
         em.persist(quinu);
         log.info("SUPPLIER ORDERS TEST - FIND BY ID - New supplier saved: " + quinu);
-
         SupplierOrder supplierOrder = new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(3),
                 false, false, quinu);
         em.persist(supplierOrder);
@@ -117,14 +118,15 @@ public class SupplierOrderRepositoryTest {
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - New supplier order saved: " + nextMonthOrder);
 
         // Execution
-        List<SupplierOrder> supplierOrders = suppOrderRepository.findBySupplierId(teklist.getId());
+        Specification<SupplierOrder> spec = null;
+        Page<SupplierOrder> supplierOrders = suppOrderRepository.findBySupplierId(teklist.getId(), PageRequest.of(0, 10));
         // Verification
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - Supplier order verifications");
         assertNotNull(supplierOrders);
-        assertEquals(2, supplierOrders.size());
-        assertTrue(supplierOrders.contains(todayOrder));
-        assertTrue(supplierOrders.contains(nextMonthOrder));
-        assertFalse(supplierOrders.contains(twoDaysOrder));
+        assertEquals(2, supplierOrders.getTotalElements());
+        assertTrue(supplierOrders.getContent().contains(todayOrder));
+        assertTrue(supplierOrders.getContent().contains(nextMonthOrder));
+        assertFalse(supplierOrders.getContent().contains(twoDaysOrder));
     }
 
     @Test
@@ -156,14 +158,56 @@ public class SupplierOrderRepositoryTest {
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - New supplier order saved: " + nextMonthOrder);
 
         // Execution
-        List<SupplierOrder> supplierOrders = suppOrderRepository.findByDeliveryDate(twoDaysOrder.getDeliveryDate());
+        Page<SupplierOrder> supplierOrders = suppOrderRepository.findByDeliveryDate(twoDaysOrder.getDeliveryDate(), PageRequest.of(0, 10));
         // Verification
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - Supplier order verifications");
         assertNotNull(supplierOrders);
-        assertEquals(1, supplierOrders.size());
-        assertFalse(supplierOrders.contains(todayOrder));
-        assertFalse(supplierOrders.contains(nextMonthOrder));
-        assertTrue(supplierOrders.contains(twoDaysOrder));
+        assertEquals(1, supplierOrders.getTotalElements());
+        assertFalse(supplierOrders.getContent().contains(todayOrder));
+        assertFalse(supplierOrders.getContent().contains(nextMonthOrder));
+        assertTrue(supplierOrders.getContent().contains(twoDaysOrder));
 
+    }
+
+    @Test
+    public void findAll() {
+        // Initialization
+        EntityManager em = testEntityManager.getEntityManager();
+
+        Supplier teklist = new Supplier("Teklist", "hwitnall1@csmonitor.com", null, null);
+        em.persist(teklist);
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier saved: " + teklist);
+
+        Supplier mymm = new Supplier("Mymm", "iheintzsch2@oakley.com", null, null);
+        em.persist(mymm);
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier saved: " + mymm);
+
+        SupplierOrder todayOrder = new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(3),
+                false, false, teklist);
+        em.persist(todayOrder);
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier order saved: " + todayOrder);
+
+        SupplierOrder twoDaysOrder = new SupplierOrder(LocalDate.now().plusDays(2), LocalDate.now().plusDays(10),
+                false, false, mymm);
+        em.persist(twoDaysOrder);
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier order saved: " + twoDaysOrder);
+
+        SupplierOrder nextMonthOrder = new SupplierOrder(LocalDate.now().plusMonths(1),
+                LocalDate.now().plusMonths(1).plusDays(3), false, false, teklist);
+        em.persist(nextMonthOrder);
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier order saved: " + nextMonthOrder);
+
+        // Execution
+        Specification<SupplierOrder> spec = null;
+        Page<SupplierOrder> supplierOrders = suppOrderRepository.findAll(spec, PageRequest.of(0, 10));
+
+        // Verification
+        log.info("SUPPLIER ORDERS TEST - FIND ALL - Supplier order verifications");
+        assertNotNull(supplierOrders);
+        assertEquals(3, supplierOrders.getTotalElements());
+
+        assertTrue(supplierOrders.getContent().contains(todayOrder));
+        assertTrue(supplierOrders.getContent().contains(twoDaysOrder));
+        assertTrue(supplierOrders.getContent().contains(nextMonthOrder));
     }
 }

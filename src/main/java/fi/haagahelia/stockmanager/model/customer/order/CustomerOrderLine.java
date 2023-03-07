@@ -42,6 +42,7 @@ public class CustomerOrderLine {
         this.sellPrice = sellPrice;
         this.customerOrder = customerOrder;
         this.product = product;
+        this.customerOrderLinePK = new CustomerOrderLinePK(customerOrder.getId(), product.getId());
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */

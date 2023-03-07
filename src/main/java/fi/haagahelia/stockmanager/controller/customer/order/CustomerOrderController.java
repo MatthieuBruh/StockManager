@@ -14,7 +14,7 @@ import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.customer.CustomerRepository;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
-import fi.haagahelia.stockmanager.service.order.CustomerOrderManagerImpl;
+import fi.haagahelia.stockmanager.service.order.CustomerOrderService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -50,10 +50,10 @@ public class CustomerOrderController {
 
     private final CustomerRepository cRepository;
     private final CustomerOrderRepository coRepository;
-    private final CustomerOrderManagerImpl orderManager;
+    private final CustomerOrderService orderManager;
 
     @Autowired
-    public CustomerOrderController(CustomerRepository cRepository, CustomerOrderRepository coRepository, CustomerOrderManagerImpl orderManager) {
+    public CustomerOrderController(CustomerRepository cRepository, CustomerOrderRepository coRepository, CustomerOrderService orderManager) {
         this.cRepository = cRepository;
         this.coRepository = coRepository;
         this.orderManager = orderManager;
@@ -229,7 +229,7 @@ public class CustomerOrderController {
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
                                                              @SortDefault.SortDefaults({
-                                                                     @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+                                                                     @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the orders of the customer: {}.", user.getUsername(), id);
             if (!cRepository.existsById(id)) {

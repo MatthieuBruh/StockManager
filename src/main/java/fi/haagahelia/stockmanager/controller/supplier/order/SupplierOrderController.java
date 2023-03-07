@@ -10,7 +10,7 @@ import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderRepository;
-import fi.haagahelia.stockmanager.service.order.SupplierOrderManagerImpl;
+import fi.haagahelia.stockmanager.service.order.SupplierOrderService;
 import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
@@ -48,11 +48,11 @@ public class SupplierOrderController {
 
     private final SupplierOrderRepository sOrderRepository;
     private final SupplierRepository sRepository;
-    private final SupplierOrderManagerImpl orderManager;
+    private final SupplierOrderService orderManager;
 
     @Autowired
     public SupplierOrderController(SupplierOrderRepository sOrderRepository, SupplierRepository sRepository,
-                                   SupplierOrderManagerImpl orderManager) {
+                                   SupplierOrderService orderManager) {
         this.sOrderRepository = sOrderRepository;
         this.sRepository = sRepository;
         this.orderManager = orderManager;
@@ -144,7 +144,7 @@ public class SupplierOrderController {
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
             Page<SupplierOrder> supplierOrders = sOrderRepository.findAll(spec, pageable);
-            if (supplierOrders.getSize() < 1) {
+            if (supplierOrders.getTotalElements() < 1) {
                 log.info("User {} requested all the supplier orders. NO DATA FOUND.", user.getUsername());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -208,7 +208,6 @@ public class SupplierOrderController {
      *
      * @param id Correspond to the id of the Supplier.
      * @param user authenticated Employee object
-     * @param searchQuery the search query, which can be null or an empty string
      * @param pageable pagination information (page number, size, and sorting)
      * @param sort sorting information for the query
      * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
@@ -220,7 +219,6 @@ public class SupplierOrderController {
     @GetMapping(value = "/{id}/orders", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<?> getSpecSupplierOrders(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user,
-                                                                 @RequestParam(required = false) String searchQuery,
                                                                  @PageableDefault(size = 10) Pageable pageable,
                                                                  @SortDefault.SortDefaults({
                                                                          @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
@@ -232,12 +230,8 @@ public class SupplierOrderController {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
-            Specification<SupplierOrder> spec = null;
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                spec = (root, query, cb) -> cb.like(cb.lower(root.get("id")), "%" + searchQuery.toLowerCase() + "%");
-            }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id, spec, pageable);
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id, pageable);
             if (supplierOrders.getSize() < 1) {
                 log.info("User {} requested the orders related to the supplier: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
@@ -249,6 +243,8 @@ public class SupplierOrderController {
             return new ResponseEntity<>(supplierOrderDTOPage, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested the orders related to the supplier: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -266,7 +262,6 @@ public class SupplierOrderController {
      *
      * @param date Corresponds to the delivery date the user wants the sales orders.
      * @param user authenticated Employee object
-     * @param searchQuery the search query, which can be null or an empty string
      * @param pageable pagination information (page number, size, and sorting)
      * @param sort sorting information for the query
      * @return a ResponseEntity containing a page model of SupplierOrderDTO objects or a Error Message.
@@ -278,7 +273,6 @@ public class SupplierOrderController {
     @GetMapping(value = "/orders/delivery={date}", produces = "application/json")
     @PreAuthorize("hasAnyAuthority('ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<?> getSupOrdersDate(@PathVariable(value = "date") LocalDate date, @AuthenticationPrincipal Employee user,
-                                                            @RequestParam(required = false) String searchQuery,
                                                             @PageableDefault(size = 10) Pageable pageable,
                                                             @SortDefault.SortDefaults({
                                                                     @SortDefault(sort = "deliveryDate", direction = Sort.Direction.ASC)}) Sort sort) {
@@ -289,13 +283,9 @@ public class SupplierOrderController {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "URL_DELIVERY_DATE_NULL");
                 return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
             }
-            Specification<SupplierOrder> spec = null;
-            if (searchQuery != null && !searchQuery.isEmpty()) {
-                spec = (root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + searchQuery.toLowerCase() + "%");
-            }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<SupplierOrder> supplierOrders = sOrderRepository.findByDeliveryDate(date, spec, pageable);
-            if (supplierOrders.getSize() < 1) {
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findByDeliveryDate(date, pageable);
+            if (supplierOrders.getTotalElements() < 1) {
                 log.info("User {} requested the supplier orders with a delivery date: '{}'. NO ORDERS FOUND.", user.getUsername(), date);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -440,7 +430,7 @@ public class SupplierOrderController {
             return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (OrderStateException e) {
             log.info("User {} requested to change the state of the supplier order with id: '{}'. ORDER IS ALREADY SENT.", user.getUsername(), id);
-            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_SENT_OR_NO_LINES");
             return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
         } catch (Exception e) {
             log.info("User {} requested to change the state of the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
@@ -478,7 +468,7 @@ public class SupplierOrderController {
             return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
         } catch (OrderStateException e) {
             log.info("User {} requested to change the state of the supplier order with id: '{}'. ORDER IS NOT SENT OR ALREADY RECEIVED.", user.getUsername(), id);
-            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_RECEIVED");
+            ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_ORDER_ALREADY_RECEIVED_OR_NOT_SENT");
             return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
         } catch (ProductStockException e) {
             log.info("User {} requested to change the receive state of the supplier order with id: '{}'." + e.getMessage(), user.getUsername(), id);

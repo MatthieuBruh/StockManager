@@ -15,8 +15,6 @@ import java.util.Optional;
 public interface SupplierOrderRepository extends JpaRepository<SupplierOrder, Long> {
     Optional<SupplierOrder> findById(Long id);
     Page<SupplierOrder> findAll(Specification<SupplierOrder> spec, Pageable pageable);
-    List<SupplierOrder> findBySupplierId(Long id);
-    Page<SupplierOrder> findBySupplierId(Long id, Specification<SupplierOrder> spec, Pageable pageable);
-    List<SupplierOrder> findByDeliveryDate(LocalDate date);
-    Page<SupplierOrder> findByDeliveryDate(LocalDate date, Specification<SupplierOrder> spec, Pageable pageable);
+    Page<SupplierOrder> findBySupplierId(Long id, Pageable pageable);
+    Page<SupplierOrder> findByDeliveryDate(LocalDate date, Pageable pageable);
 }

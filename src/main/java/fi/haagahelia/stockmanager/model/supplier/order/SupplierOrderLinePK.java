@@ -18,11 +18,13 @@ public class SupplierOrderLinePK implements Serializable {
 
     /* ------------------------------------------------ CONSTRUCTORS ------------------------------------------------ */
 
-    public SupplierOrderLinePK() { }
-
     public SupplierOrderLinePK(Long supplierOrderId, Long productId) {
         this.supplierOrderId = supplierOrderId;
         this.productId = productId;
+    }
+
+    public SupplierOrderLinePK() {
+
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */

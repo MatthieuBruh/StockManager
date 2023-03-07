@@ -17,6 +17,8 @@ public class SupplierOrderLineDTO extends RepresentationModel<SupplierOrderLineD
 
     private Integer quantity;
     private Double buyPrice;
+    private Long supplierOrderId;
+    private Long productId;
 
     /* -------------------------------------------------- RELATIONS ------------------------------------------------- */
 
@@ -40,6 +42,8 @@ public class SupplierOrderLineDTO extends RepresentationModel<SupplierOrderLineD
         if (supplierOrderLine.getProduct() != null) {
             supplierOrderLineDTOBuilder.productCompleteDTO(ProductCompleteDTO.convert(supplierOrderLine.getProduct()));
         }
+        supplierOrderLineDTOBuilder.supplierOrderId(supplierOrderLine.getSupplierOrder().getId());
+        supplierOrderLineDTOBuilder.productId(supplierOrderLine.getProduct().getId());
         return supplierOrderLineDTOBuilder.build();
     }
 

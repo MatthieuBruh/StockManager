@@ -5,6 +5,7 @@ import fi.haagahelia.stockmanager.model.user.Employee;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,7 +44,7 @@ public class CustomerOrder {
 
     /* ------------------------------------------------ CONSTRUCTORS ------------------------------------------------ */
 
-    public CustomerOrder() { }
+    public CustomerOrder() { this.customerOrderLines = new ArrayList<>(); }
 
     public CustomerOrder(LocalDate date, LocalDate deliveryDate, Boolean isSent, Employee employee, Customer customer) {
         this.date = date;
@@ -51,6 +52,7 @@ public class CustomerOrder {
         this.isSent = isSent;
         this.employee = employee;
         this.customer = customer;
+        this.customerOrderLines = new ArrayList<>();
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */

@@ -11,18 +11,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Long> {
     Optional<CustomerOrder> findById(Long id);
     Page<CustomerOrder> findAll(Specification<CustomerOrder> spec, Pageable pageable);
+
+    @Query(value = "SELECT c FROM CustomerOrder c WHERE c.customer.id = ?1")
     Page<CustomerOrder> findByCustomerId(Long id, Specification<CustomerOrder> spec, Pageable pageable);
+
+    @Query(value = "SELECT c FROM CustomerOrder c WHERE c.deliveryDate = ?1")
     Page<CustomerOrder> findByDeliveryDate(LocalDate date, Specification<CustomerOrder> spec, Pageable pageable);
 
     @Query(value = "SELECT o.isSent FROM CustomerOrder o WHERE o.id = ?1")
-    Boolean getCustomerOrderSentByCustomerId(Long id);
+    Boolean isCustomerOrderSentByOrderId(Long id);
 
     @Transactional
     @Modifying
