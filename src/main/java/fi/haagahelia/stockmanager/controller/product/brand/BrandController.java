@@ -124,6 +124,8 @@ public class BrandController {
             return new ResponseEntity<>(brandDTOPage, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested all the brands. UNEXPECTED ERROR!", user.getUsername());
+            e.printStackTrace();
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

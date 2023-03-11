@@ -3,6 +3,7 @@ package fi.haagahelia.stockmanager.service;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.model.user.Role;
 import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
+import fi.haagahelia.stockmanager.repository.user.RoleRepository;
 import jakarta.persistence.EntityManager;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -23,8 +23,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @ExtendWith(SpringExtension.class)
@@ -34,86 +35,64 @@ import static org.mockito.Mockito.when;
 @Log4j2
 public class CustomEmployeeDetailsServiceTest {
 
-    @Mock
-    private EmployeeRepository employeeRepositoryMock;
-
     @Autowired
     private TestEntityManager testEntityManager;
 
-    @InjectMocks
-    private CustomEmployeeDetailsService customEmployeeDetailsService;
+    @Mock
+    private EmployeeRepository employeeRepository;
 
-    private Employee employee;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @InjectMocks
+    private CustomEmployeeDetailsService employeeDetailsService;
+
 
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        customEmployeeDetailsService = new CustomEmployeeDetailsService(employeeRepositoryMock);
-
         EntityManager em = testEntityManager.getEntityManager();
-        em.createQuery("DELETE Employee").executeUpdate();
-        em.createQuery("DELETE Role").executeUpdate();
-        log.info("CUSTOM EMPLOYEE DETAILS SERVICE - INIT - DATABASE CLEARED.");
+        em.createQuery("DELETE Employee ").executeUpdate();
+        em.createQuery("DELETE Role ").executeUpdate();
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - INIT - DATABASE CLEARED.");
+    }
 
+    @Test
+    public void loadUserByUsernameNotFound() {
+        // Arrange
+        String username = "nonexistentuser";
+        when(employeeRepository.findByUsername(username)).thenReturn(Optional.empty());
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME NOT FOUND - Execution done.");
+        // Act & Assert
+        assertThrows(
+                UsernameNotFoundException.class,
+                () -> employeeDetailsService.loadUserByUsername(username),
+                "No employee found with the username: " + username
+        );
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME NOT FOUND - Verification done.");
+    }
+
+    @Test
+    public void loadUserByUsernameFound() {
+        // Arrange
         Role role = new Role("ROLE_TEST", "This is a test for role");
-        em.persist(role);
-        log.info("CUSTOM EMPLOYEE DETAILS SERVICE - INIT - New role saved: {}.", role);
+        Role savedRole = roleRepository.save(role);
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME FOUND - New role saved: " + role);
 
-        employee = new Employee("testing@haaga-helia.fi", "jhn", "John", "Doe", new BCryptPasswordEncoder().encode("1234"), true, false);
-        employee.addRole(role);
-        em.persist(employee);
-        log.info("CUSTOM EMPLOYEE DETAILS SERVICE - INIT - New employee saved: {}.", employee);
-        em.getTransaction().commit();
-    }
+        Employee employee = new Employee("testing@haaga-helia.fi", "jhn", "John", "Doe", new BCryptPasswordEncoder().encode("1234"), true, false);
+        employee.addRole(savedRole);
+        employeeRepository.save(employee);
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME FOUND - New employee saved: " + employee);
 
-    @Test
-    public void testLoadUserByUsername() {
-        /*
-        // Arrange
-        String username = "testuser";
-        Employee employee = new Employee();
-        employee.setUsername(username);
-        when(employeeRepositoryMock.findByUsername(username)).thenReturn(Optional.of(employee));
+        // Execution
+        String username = employee.getUsername();
+        when(employeeRepository.findByUsername(username)).thenReturn(Optional.of(employee));
+        UserDetails userDetails = employeeDetailsService.loadUserByUsername(username);
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME FOUND - Execution done.");
 
-        // Act
-        UserDetails userDetails = customEmployeeDetailsService.loadUserByUsername(username);
-
-        // Assert
-        assertNotNull(userDetails);
+        // Verifications
         assertEquals(username, userDetails.getUsername());
-        UserDetails foundEmployee = customEmployeeDetailsService.loadUserByUsername(employee.getUsername());
-        log.info("CUSTOM EMPLOYEE DETAILS SERVICE - LOAD BY USERNAME - EXECUTION DONE.");
-        assertNotNull(foundEmployee);
-        assertEquals(employee, foundEmployee);
-        log.info("CUSTOM EMPLOYEE DETAILS SERVICE - LOAD BY USERNAME - EXECUTION DONE.");
-        */
-    }
-
-    @Test
-    public void testLoadUserByUsernameThrowsExceptionWhenUserNotFound() {
-        /*
-        // Arrange
-        String username = "testuser";
-        when(employeeRepositoryMock.findByUsername(username)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(UsernameNotFoundException.class, () -> {
-            customEmployeeDetailsService.loadUserByUsername(username);
-        });
-        */
-    }
-
-    @Test
-    public void testLoadUserByUsernameThrowsRuntimeExceptionWhenRepositoryThrowsException() {
-        /*
-        // Arrange
-        String username = "testuser";
-        when(employeeRepositoryMock.findByUsername(username)).thenThrow(new RuntimeException());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            customEmployeeDetailsService.loadUserByUsername(username);
-        });
-        */
+        assertEquals(employee.getPassword(), userDetails.getPassword());
+        assertEquals(employee.getRoles().size(), userDetails.getAuthorities().size());
+        log.info("CUSTOM EMPLOYEE DETAILS SERVICE TEST - LOAD USER BY USERNAME FOUND - Verifications done.");
     }
 }

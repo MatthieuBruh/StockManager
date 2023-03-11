@@ -65,7 +65,7 @@ public class GeolocationController {
     }
 
     /**
-     * This function is used to ensre that a GeolocationCuDTO is valid.
+     * This function is used to ensure that a GeolocationCuDTO is valid.
      * We check the following constraints:
      *      - Street name is not null and not empty.
      *      - Street number is not null and not empty.
@@ -120,7 +120,7 @@ public class GeolocationController {
                                                            @RequestParam(required = false) String searchQuery,
                                                            @PageableDefault(size = 10) Pageable pageable,
                                                            @SortDefault.SortDefaults({
-                                                                   @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+                                                                   @SortDefault(sort = "streetName", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the geolocations from the database.", user.getUsername());
             Specification<Geolocation> spec = null;
@@ -143,7 +143,7 @@ public class GeolocationController {
             PagedModel<GeolocationDTO> geolocationDTOPage = PagedModel.of(geolocationDTOS, pmd);
             geolocationDTOPage.add(linkTo(GeolocationController.class).withRel("geolocations"));
             log.info("User {} requested all the geolocations from the database. RETURNING DATA.", user.getUsername());
-            return new ResponseEntity<>(geolocationDTOS, HttpStatus.OK);
+            return new ResponseEntity<>(geolocationDTOPage, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested all the geolocations. UNEXPECTED ERROR!", user.getUsername());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

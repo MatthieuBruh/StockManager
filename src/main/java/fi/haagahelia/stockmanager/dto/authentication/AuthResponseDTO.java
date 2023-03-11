@@ -1,8 +1,7 @@
 package fi.haagahelia.stockmanager.dto.authentication;
 
 
-import lombok.Data;
-import lombok.NonNull;
+import lombok.*;
 
 @Data
 public class AuthResponseDTO {

@@ -7,8 +7,6 @@ import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.product.brand.Brand;
 import fi.haagahelia.stockmanager.model.product.category.Category;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
-import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
-import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLine;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.model.user.Role;
 import jakarta.persistence.EntityManager;

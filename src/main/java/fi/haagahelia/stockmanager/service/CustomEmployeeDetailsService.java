@@ -31,6 +31,8 @@ public class CustomEmployeeDetailsService implements UserDetailsService {
             }
 
             return employeeOptional.get();
+        } catch (UsernameNotFoundException e) {
+            throw new UsernameNotFoundException(e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Error occurred while retrieving user details", e);
         }
