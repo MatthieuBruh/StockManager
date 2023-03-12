@@ -7,10 +7,12 @@ import fi.haagahelia.stockmanager.dto.supplier.SupplierCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
+import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.common.GeolocationRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
+import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -45,12 +47,15 @@ public class SupplierController {
     private final SupplierRepository sRepository;
     private final GeolocationRepository gRepository;
     private final ProductRepository pRepository;
+    private final SupplierOrderRepository soRepository;
 
     @Autowired
-    public SupplierController(SupplierRepository sRepository, GeolocationRepository gRepository, ProductRepository pRepository) {
+    public SupplierController(SupplierRepository sRepository, GeolocationRepository gRepository,
+                              ProductRepository pRepository, SupplierOrderRepository soRepository) {
         this.sRepository = sRepository;
         this.gRepository = gRepository;
         this.pRepository = pRepository;
+        this.soRepository = soRepository;
     }
 
     /* ---------------------------------------------------- TOOLS --------------------------------------------------- */
@@ -113,13 +118,15 @@ public class SupplierController {
      * @param geoId the geolocation id
      */
     private void setGeolocationById(Supplier supplier, Long geoId, String username) {
-        Optional<Geolocation> geolocationOptional = gRepository.findById(geoId);
-        if (geolocationOptional.isPresent()) {
-            log.debug("User {} requested to create a new supplier with the name: {}. Adding the geolocation with id: {}.",
-                    username, supplier.getName(), geoId);
-            Geolocation geolocation = geolocationOptional.get();
-            supplier.setGeolocation(geolocation);
+        if (geoId != null) {
+            Optional<Geolocation> geolocationOptional = gRepository.findById(geoId);
+            if (geolocationOptional.isPresent()) {
+                log.debug("User {} requested to create a new supplier with the name: {}. Adding the geolocation with id: {}.", username, supplier.getName(), geoId);
+                supplier.setGeolocation(geolocationOptional.get());
+                return;
+            }
         }
+        supplier.setGeolocation(null);
     }
 
     /* ------------------------------------------------- API METHODS ------------------------------------------------ */
@@ -301,7 +308,6 @@ public class SupplierController {
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Supplier supplier = optionalSupplier.get();
-            supplier.setName(supplierCuDTO.getName());
             supplier.setEmail(supplierCuDTO.getEmail());
             supplier.setPhoneNumber(supplierCuDTO.getPhoneNumber());
             setGeolocationById(supplier, supplierCuDTO.getGeolocationId(), user.getUsername());
@@ -345,6 +351,11 @@ public class SupplierController {
             }
             if (pRepository.existsBySupplierId(id)) {
                 log.info("User {} requested to delete the supplier with id: '{}'. PRODUCTS RELATED TO THIS SUPPLIER.", user.getUsername(), id);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_HAS_RELATIONSHIPS");
+                return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+            }
+            if (soRepository.existsBySupplierId(id)) {
+                log.info("User {} requested to delete the supplier with id: '{}'. SUPPLIER ORDERS RELATED TO THIS SUPPLIER.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "SUPPLIER_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }

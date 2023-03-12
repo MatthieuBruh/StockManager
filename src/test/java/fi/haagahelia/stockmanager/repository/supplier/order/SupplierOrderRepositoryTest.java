@@ -1,8 +1,10 @@
 package fi.haagahelia.stockmanager.repository.supplier.order;
 
 
+import fi.haagahelia.stockmanager.model.common.Geolocation;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
+import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.extern.log4j.Log4j2;
@@ -31,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Log4j2
 public class SupplierOrderRepositoryTest {
+    @Autowired
+    private SupplierRepository supplierRepository;
 
     @Autowired
     private SupplierOrderRepository suppOrderRepository;
@@ -209,5 +213,37 @@ public class SupplierOrderRepositoryTest {
         assertTrue(supplierOrders.getContent().contains(todayOrder));
         assertTrue(supplierOrders.getContent().contains(twoDaysOrder));
         assertTrue(supplierOrders.getContent().contains(nextMonthOrder));
+    }
+
+    @Test
+    public void existsBySupplierId() {
+        // Initialization
+        Supplier supplier = supplierRepository.save(new Supplier("Zooko", "zooko@gmail.com", "", null));
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - New supplier saved: " + supplier);
+        SupplierOrder order = suppOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(7), false, false, supplier));
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - New supplier order saved: " + order);
+
+        // Execution
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - Execution");
+        Boolean result = suppOrderRepository.existsBySupplierId(supplier.getId());
+        // Verification
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - Supplier order verifications");
+        assertNotNull(result);
+        assertTrue(result);
+    }
+
+    @Test
+    public void DoesNoExistBySupplierId() {
+        // Initialization
+        Supplier supplier = supplierRepository.save(new Supplier("Zooko", "zooko@gmail.com", "", null));
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - New supplier saved: " + supplier);
+
+        // Execution
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - Execution");
+        Boolean result = suppOrderRepository.existsBySupplierId(supplier.getId());
+        // Verification
+        log.info("SUPPLIER ORDERS TEST - EXISTS BY SUPPLIER ID - Supplier order verifications");
+        assertNotNull(result);
+        assertFalse(result);
     }
 }

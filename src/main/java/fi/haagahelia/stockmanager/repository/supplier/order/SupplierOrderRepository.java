@@ -17,4 +17,5 @@ public interface SupplierOrderRepository extends JpaRepository<SupplierOrder, Lo
     Page<SupplierOrder> findAll(Specification<SupplierOrder> spec, Pageable pageable);
     Page<SupplierOrder> findBySupplierId(Long id, Pageable pageable);
     Page<SupplierOrder> findByDeliveryDate(LocalDate date, Pageable pageable);
+    Boolean existsBySupplierId(Long id);
 }
