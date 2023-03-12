@@ -61,7 +61,7 @@ public class CustomerController {
      * @return The dto model with the HATEOAS links.
      */
     private CustomerDTO createHATEOAS(CustomerDTO customerDTO) {
-        Link selfLink = linkTo(CustomerController.class).slash(String.valueOf(customerDTO.getId())).withSelfRel();
+        Link selfLink = linkTo(CustomerController.class).slash(String.valueOf(customerDTO.getEmail())).withSelfRel();
         customerDTO.add(selfLink);
         Link collectionLink = linkTo(CustomerController.class).withRel("customers");
         customerDTO.add(collectionLink);
@@ -119,15 +119,17 @@ public class CustomerController {
      * @param geoId the geolocation id
      */
     private void setGeolocationById(Customer customer, Long geoId, String username) {
-        Optional<Geolocation> geolocationOptional = gRepository.findById(geoId);
-        if (geolocationOptional.isPresent()) {
-            log.debug("User {} requested to create a new customer with the name: {}. Adding the geolocation with id: {}.",
-                    username, customer.getFirstName() + customer.getLastName(), geoId);
-            Geolocation geolocation = geolocationOptional.get();
-            customer.setGeolocation(geolocation);
-        } else {
-            customer.setGeolocation(null);
+        if (geoId != null) {
+            Optional<Geolocation> geolocationOptional = gRepository.findById(geoId);
+            if (geolocationOptional.isPresent()) {
+                log.debug("User {} requested to create a new customer with the name: {}. Adding the geolocation with id: {}.",
+                        username, customer.getFirstName() + customer.getLastName(), geoId);
+                Geolocation geolocation = geolocationOptional.get();
+                customer.setGeolocation(geolocation);
+                return;
+            }
         }
+        customer.setGeolocation(null);
     }
 
     /* ------------------------------------------------- API METHODS ------------------------------------------------ */
