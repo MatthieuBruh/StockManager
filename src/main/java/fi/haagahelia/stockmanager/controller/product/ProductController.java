@@ -197,7 +197,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getProduct(@AuthenticationPrincipal Employee user,
                                                       @RequestParam(required = false) String searchQuery,
                                                       @PageableDefault(size = 10) Pageable pageable,
@@ -250,7 +250,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the product with id: '{}'.", user.getUsername(), id);
@@ -287,7 +287,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}/details", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getProdDetail(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the detailed product with id: '{}'.", user.getUsername(), id);
@@ -323,7 +323,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/low", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')")
     public @ResponseBody ResponseEntity<?> getLowStockProd(@AuthenticationPrincipal Employee user,
                                                            @RequestParam(required = false) String searchQuery,
                                                            @PageableDefault(size = 10) Pageable pageable,
@@ -381,7 +381,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createProduct(@RequestBody ProductCuDTO productCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create a new product with name: '{}'.", user.getUsername(), productCuDTO.getName());
@@ -428,7 +428,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateProduct(@PathVariable(value = "id") Long id,
                                                          @RequestBody ProductCuDTO productCuDTO,
                                                          @AuthenticationPrincipal Employee user) {
@@ -481,7 +481,7 @@ public class ProductController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> deleteProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the product with id: '{}'.", user.getUsername(), id);

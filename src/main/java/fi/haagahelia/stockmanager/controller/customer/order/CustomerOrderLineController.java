@@ -119,7 +119,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/details",produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
                                                          @PageableDefault(size = 10) Pageable pageable,
                                                          @SortDefault.SortDefaults({
@@ -168,7 +168,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/details/product={productId}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId,
                                                            @PathVariable(value = "productId") Long productId,
                                                            @AuthenticationPrincipal Employee user) {
@@ -222,7 +222,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(value = "/details/{productId}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                               @RequestBody CustomerOrderLineCuDTO cusOrderLineDTO, @AuthenticationPrincipal Employee user) {
         try {
@@ -306,7 +306,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/details/product={productId}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                            @AuthenticationPrincipal Employee user) {
         try {

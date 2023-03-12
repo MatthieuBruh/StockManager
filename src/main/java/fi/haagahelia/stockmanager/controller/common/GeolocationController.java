@@ -115,7 +115,7 @@ public class GeolocationController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getGeolocations(@AuthenticationPrincipal Employee user,
                                                            @RequestParam(required = false) String searchQuery,
                                                            @PageableDefault(size = 10) Pageable pageable,
@@ -167,7 +167,7 @@ public class GeolocationController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getGeolocationById(@PathVariable(value = "id") Long id,
                                                               @AuthenticationPrincipal Employee user) {
         try {
@@ -204,7 +204,7 @@ public class GeolocationController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createGeo(@RequestBody GeolocationCuDTO geoCuDTO,
                                                      @AuthenticationPrincipal Employee user) {
         try {
@@ -254,7 +254,7 @@ public class GeolocationController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteGeolocation(@PathVariable(value = "id") Long id,
                                                                          @AuthenticationPrincipal Employee user) {
         try {

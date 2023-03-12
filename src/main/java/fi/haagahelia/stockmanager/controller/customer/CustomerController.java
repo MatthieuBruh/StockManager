@@ -153,7 +153,7 @@ public class CustomerController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustomers(@AuthenticationPrincipal Employee user,
                                                         @RequestParam(required = false) String searchQuery,
                                                         @PageableDefault(size = 10) Pageable pageable,
@@ -205,7 +205,7 @@ public class CustomerController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{email}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer with email: '{}'.", user.getUsername(), email);
@@ -243,7 +243,7 @@ public class CustomerController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createCustomer(@RequestBody CustomerCuDTO customerCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new customer with email: '{}'", user.getUsername(), customerCuDTO.getEmail());
@@ -287,7 +287,7 @@ public class CustomerController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{email}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateCustomer(@PathVariable(value = "email") String email,
                                                           @RequestBody CustomerCuDTO customerCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
@@ -337,7 +337,7 @@ public class CustomerController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{email}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> deleteCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);

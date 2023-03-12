@@ -151,7 +151,7 @@ public class SupplierController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getSuppliers(@AuthenticationPrincipal Employee user,
                                                         @RequestParam(required = false) String searchQuery,
                                                         @PageableDefault(size = 10) Pageable pageable,
@@ -202,7 +202,7 @@ public class SupplierController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getSupplierByID(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the supplier with id: '{}'.", user.getUsername(), id);
@@ -239,7 +239,7 @@ public class SupplierController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createNewSupplier(@RequestBody SupplierCuDTO supplierCuDTO,  @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new supplier with name: '{}'.", user.getUsername(), supplierCuDTO.getName());
@@ -289,7 +289,7 @@ public class SupplierController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateSupplier(@PathVariable(value = "id") Long id,
                                                           @RequestBody SupplierCuDTO supplierCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
@@ -340,7 +340,7 @@ public class SupplierController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the supplier with id: '{}'.", user.getUsername(), id);

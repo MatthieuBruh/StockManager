@@ -136,7 +136,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/orders", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustomerOrders(@AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
@@ -182,7 +182,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/orders/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustomerOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer order with id: '{}'.", user.getUsername(), id);
@@ -224,7 +224,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}/orders", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustomerOrders(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
@@ -278,7 +278,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/orders/delivery={date}", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCustOrdersDate(@PathVariable(value = "date") LocalDate date, @AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
@@ -331,7 +331,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(value = "/orders", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createCustomerOrder(@AuthenticationPrincipal Employee user, @RequestBody CustomerOrderCuDTO orderCuDTO) {
         try {
             log.info("User {} is requesting to create a new customer order.", user.getUsername());
@@ -380,7 +380,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateOrder(@PathVariable(value = "id") Long id,
                                                        @AuthenticationPrincipal Employee user,
                                                        @RequestBody CustomerOrderCuDTO orderCuDTO) {
@@ -421,7 +421,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/send", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> sendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to send the customer order with id: '{}'.", user.getUsername(), orderId);
@@ -463,7 +463,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/cancel-sending", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> cancelSendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to cancel the shipment of the customer order with id: '{}'.", user.getUsername(), orderId);
@@ -508,7 +508,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/orders/{id}", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> deleteOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);
@@ -552,7 +552,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/orders/{id}/force", produces = "application/json")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> deleteOrderForce(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);

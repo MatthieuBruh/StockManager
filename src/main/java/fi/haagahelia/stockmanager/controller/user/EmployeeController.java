@@ -129,7 +129,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getEmployees(@AuthenticationPrincipal Employee user,
                                                         @RequestParam(required = false) String searchQuery,
                                                         @PageableDefault(size = 10) Pageable pageable,
@@ -181,7 +181,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getEmployeeById(@PathVariable(value = "id") Long id,
                                                            @AuthenticationPrincipal Employee user) {
         try {
@@ -221,7 +221,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createEmployee(@AuthenticationPrincipal Employee user,
                                                           @RequestBody EmployeeCuDTO employeeCuDTO) {
         try {
@@ -274,7 +274,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateEmployee(@PathVariable(value = "id") Long id,
                                                           @RequestBody EmployeeCuDTO employeeCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
@@ -328,7 +328,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{id}/activate", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> activateEmployee(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to activate the employee with id: '{}'.", user.getUsername(), id);
@@ -369,7 +369,7 @@ public class EmployeeController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the employee with id: {}.", user.getUsername(), id);

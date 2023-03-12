@@ -93,7 +93,7 @@ public class ProductControllerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        Role admin = new Role("Admin", "For the admins"); roleRepository.save(admin);
+        Role admin = new Role("ROLE_ADMIN", "For the admins"); roleRepository.save(admin);
         String password = "A1234";
         employee = new Employee("main@haaga.fi", "main", "Main", "Haaga", new BCryptPasswordEncoder().encode(password), true, false);
         employeeRepository.save(employee);

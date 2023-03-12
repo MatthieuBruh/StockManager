@@ -91,7 +91,7 @@ public class BrandController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getAllBrands(@AuthenticationPrincipal Employee user,
                                             @RequestParam(required = false) String searchQuery,
                                             @PageableDefault(size = 10) Pageable pageable,
@@ -145,7 +145,7 @@ public class BrandController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getBrandById(@PathVariable(name = "id") Long id,
                                                                @AuthenticationPrincipal Employee user) {
         try {
@@ -184,7 +184,7 @@ public class BrandController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @PostMapping(produces = "application/json", consumes = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createNewBrand(@AuthenticationPrincipal Employee user,
                                                                  @RequestBody BrandCuDTO brandCuDTO) {
         try {
@@ -221,7 +221,7 @@ public class BrandController {
      *      If not, we return an HttpStatus.NO_CONTENT to the user.
      * Secondly, we verify that no products are related to this brand.
      *      If a product is related to this brand, it's not possible to delete the brand.
-     *      We return an HttpStatus.CONFLICT to the user.
+     *      We return an HttpStatus.CONFLICT. to the user.
      * Thirdly, we can delete the brand from the database.
      * Finally, we return to the user an HttpStatus.ACCEPTED.
      * @param id Corresponds to the id of the brand that the user wants to delete.
@@ -232,7 +232,7 @@ public class BrandController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = ("/{id}"))
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteBrand(@PathVariable(name = "id") Long id,
                                                                    @AuthenticationPrincipal Employee user) {
         try {

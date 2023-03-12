@@ -100,7 +100,7 @@ public class CategoryController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getALlCategories(@AuthenticationPrincipal Employee user,
                                                             @RequestParam(required = false) String searchQuery,
                                                             @PageableDefault(size = 10) Pageable pageable,
@@ -151,7 +151,7 @@ public class CategoryController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @GetMapping(value = "/{id}", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_VENDOR')")
+    @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getCategoryndById(@PathVariable(value = "id") Long id,
                                                              @AuthenticationPrincipal Employee user) {
         try {
@@ -190,7 +190,7 @@ public class CategoryController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createCategory(@RequestBody CategoryCuDTO categoryCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
         try {
@@ -238,7 +238,7 @@ public class CategoryController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> updateCategory(@PathVariable(value = "id") Long id,
                                                           @RequestBody CategoryCuDTO categoryCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
@@ -281,7 +281,7 @@ public class CategoryController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @DeleteMapping(value = "/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteCategory(@PathVariable(value = "id") Long id,
                                                                       @AuthenticationPrincipal Employee user) {
         try {
