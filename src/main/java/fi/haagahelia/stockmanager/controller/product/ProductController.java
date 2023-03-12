@@ -110,23 +110,20 @@ public class ProductController {
      * @param category the category of the product.
      * @param supplier the supplier of the product.
      * @param isUpdate If it is an update, we set the id of the product object.
-     * @return the constructed object.
      */
-    private Product createProductObj(ProductCuDTO productCuDTO, Brand brand, Category category,
+    private void createProductObj(ProductCuDTO productCuDTO, Product product, Brand brand, Category category,
                                      Supplier supplier, boolean isUpdate) {
-        Product product = new Product();
         if (isUpdate) product.setId(productCuDTO.getId());
         product.setName(productCuDTO.getName());
         product.setDescription(productCuDTO.getDescription());
         product.setPurchasePrice(productCuDTO.getPurchasePrice());
         product.setSalePrice(productCuDTO.getSalePrice());
-        product.setStock(productCuDTO.getStock());
+        if (!isUpdate) product.setStock(productCuDTO.getStock());
         product.setMinStock(productCuDTO.getMinStock());
         product.setBatchSize(productCuDTO.getBatchSize());
         product.setBrand(brand);
         product.setCategory(category);
         product.setSupplier(supplier);
-        return product;
     }
 
     /**
@@ -139,7 +136,7 @@ public class ProductController {
      * @param productCuDTO Correspond to the Product given by the user.
      * @return The HttpStatusCode and the brief description as a string.
      */
-    private Pair<HttpStatus, String> validateProduct(ProductCuDTO productCuDTO) {
+    private Pair<HttpStatus, String> validateProduct(ProductCuDTO productCuDTO, boolean isUpdate) {
         if (productCuDTO.getName() == null || productCuDTO.getName().equals("")) {
             return Pair.of(HttpStatus.BAD_REQUEST, "PRODUCT_INVALID_NAME");
         }
@@ -170,8 +167,10 @@ public class ProductController {
         if (productCuDTO.getSupplierId() == null || !sRepository.existsById(productCuDTO.getSupplierId())) {
             return Pair.of(HttpStatus.NOT_FOUND, "PRODUCT_INVALID_SUPPLIER_ID");
         }
-        if (pRepository.existsByNameAndSupplierId(productCuDTO.getName(), productCuDTO.getSupplierId())) {
-            return Pair.of(HttpStatus.CONFLICT, "PRODUCT_ALREADY_EXISTS");
+        if (!isUpdate) {
+            if (pRepository.existsByNameAndSupplierId(productCuDTO.getName(), productCuDTO.getSupplierId())) {
+                return Pair.of(HttpStatus.CONFLICT, "PRODUCT_ALREADY_EXISTS");
+            }
         }
         return Pair.of(HttpStatus.ACCEPTED, "");
     }
@@ -386,7 +385,7 @@ public class ProductController {
     public @ResponseBody ResponseEntity<?> createProduct(@RequestBody ProductCuDTO productCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create a new product with name: '{}'.", user.getUsername(), productCuDTO.getName());
-            Pair<HttpStatus, String> validation = validateProduct(productCuDTO);
+            Pair<HttpStatus, String> validation = validateProduct(productCuDTO, false);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create the product with name: '{}'. {}",
                         user.getUsername(), productCuDTO.getName(), validation.getSecond());
@@ -396,7 +395,8 @@ public class ProductController {
             Brand brandOptional = bRepository.findById(productCuDTO.getBrandId()).get();
             Category categoryOptional = cRepository.findById(productCuDTO.getCategoryId()).get();
             Supplier supplierOptional = sRepository.findById(productCuDTO.getSupplierId()).get();
-            Product product = createProductObj(productCuDTO, brandOptional, categoryOptional, supplierOptional, false);
+            Product product = new Product();
+            createProductObj(productCuDTO, product, brandOptional, categoryOptional, supplierOptional, false);
             log.warn("User {} requested to create the product with name: '{}'. SAVING DATA", user.getUsername(), product.getName());
             Product savedProduct = pRepository.save(product);
             ProductCompleteDTO productCompleteDTO = ProductCompleteDTO.convert(savedProduct);
@@ -434,12 +434,13 @@ public class ProductController {
                                                          @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to update the product with id: '{}'.", user.getUsername(), id);
-            if (!pRepository.existsById(id)) {
+            Optional<Product> productOptional = pRepository.findById(id);
+            if (productOptional.isEmpty()) {
                 log.info("User {} requested to update the product with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
-            Pair<HttpStatus, String> validation = validateProduct(productCuDTO);
+            Pair<HttpStatus, String> validation = validateProduct(productCuDTO, true);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to update the product with name: '{}'. {}", user.getUsername(), productCuDTO.getName(), validation.getSecond());
                 ErrorResponse bm = new ErrorResponse(validation.getFirst().getReasonPhrase(), validation.getSecond());
@@ -448,8 +449,8 @@ public class ProductController {
             Brand brandOptional = bRepository.findById(productCuDTO.getBrandId()).get();
             Category categoryOptional = cRepository.findById(productCuDTO.getCategoryId()).get();
             Supplier supplierOptional = sRepository.findById(productCuDTO.getSupplierId()).get();
-
-            Product product = createProductObj(productCuDTO, brandOptional, categoryOptional, supplierOptional, true);
+            Product product = productOptional.get();
+            createProductObj(productCuDTO, product, brandOptional, categoryOptional, supplierOptional, true);
             log.debug("User {} requested to update the product with id: '{}'. SAVING DATA", user.getUsername(), product.getId());
             Product savedProduct = pRepository.save(product);
             ProductCompleteDTO productCompleteDTO = ProductCompleteDTO.convert(savedProduct);
