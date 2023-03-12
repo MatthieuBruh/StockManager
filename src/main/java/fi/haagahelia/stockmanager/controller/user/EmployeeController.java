@@ -83,22 +83,22 @@ public class EmployeeController {
     private Pair<HttpStatus, String> validateEmployee(EmployeeCuDTO employeeCuDTO, boolean isForUpdate) {
         if (employeeCuDTO.getEmail() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_EMAIL_NULL");
         if (employeeCuDTO.getEmail().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_EMAIL_EMPTY");
-        if (employeeCuDTO.getUserName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_USERNAME_NULL");
-        if (employeeCuDTO.getUserName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_USERNAME_NULL");
+        if (employeeCuDTO.getUsername() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_USERNAME_NULL");
+        if (employeeCuDTO.getUsername().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_USERNAME_NULL");
         if (employeeCuDTO.getFirstName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_FIRSTNAME_NULL");
         if (employeeCuDTO.getFirstName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_FIRSTNAME_EMPTY");
         if (employeeCuDTO.getLastName() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_LASTNAME_NULL");
         if (employeeCuDTO.getLastName().length() < 1) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_LASTNAME_EMPTY");
         if (isForUpdate) {
-            if (eRepository.existsByUsername(employeeCuDTO.getUserName())) {
-                return Pair.of(HttpStatus.NOT_FOUND, "EMPLOYEE_USERNAME_FOUND");
+            if (!eRepository.existsByUsername(employeeCuDTO.getUsername())) {
+                return Pair.of(HttpStatus.NOT_FOUND, "EMPLOYEE_USERNAME_NOT_FOUND");
             }
-            if (eRepository.existsByEmail(employeeCuDTO.getEmail())) {
-                return Pair.of(HttpStatus.NOT_FOUND, "EMPLOYEE_EMAIL_FOUND");
+            if (!eRepository.existsByEmail(employeeCuDTO.getEmail())) {
+                return Pair.of(HttpStatus.NOT_FOUND, "EMPLOYEE_EMAIL_NOT_FOUND");
             }
         } else {
             if (employeeCuDTO.getPassword() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_PASSWORD_NULL");
-            if (eRepository.existsByUsername(employeeCuDTO.getUserName())) {
+            if (eRepository.existsByUsername(employeeCuDTO.getUsername())) {
                 return Pair.of(HttpStatus.CONFLICT, "EMPLOYEE_USERNAME_ALREADY_EXIST");
             }
             if (eRepository.existsByEmail(employeeCuDTO.getEmail())) {
@@ -225,8 +225,7 @@ public class EmployeeController {
     public @ResponseBody ResponseEntity<?> createEmployee(@AuthenticationPrincipal Employee user,
                                                           @RequestBody EmployeeCuDTO employeeCuDTO) {
         try {
-            log.info("User {} is requesting to create a new employee with email: '{}'.",
-                    user.getUsername(), employeeCuDTO.getEmail());
+            log.info("User {} is requesting to create a new employee with email: '{}'.", user.getUsername(), employeeCuDTO.getEmail());
             Pair<HttpStatus, String> validation = validateEmployee(employeeCuDTO, false);
             if (!validation.getFirst().equals(HttpStatus.ACCEPTED)) {
                 log.info("User {} requested to create a new employee with email: '{}'. {}", user.getUsername(), employeeCuDTO.getEmail(), validation.getSecond());
@@ -234,7 +233,7 @@ public class EmployeeController {
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Employee employee = new Employee();
-            employee.setEmail(employeeCuDTO.getEmail()); employee.setUsername(employeeCuDTO.getUserName());
+            employee.setEmail(employeeCuDTO.getEmail()); employee.setUsername(employeeCuDTO.getUsername());
             employee.setFirstName(employeeCuDTO.getFirstName()); employee.setLastName(employeeCuDTO.getLastName());
             employee.setPassword(passwordEncoder.encode(employeeCuDTO.getPassword()));
             employee.setActive(false); employee.setBlocked(true);
@@ -294,7 +293,7 @@ public class EmployeeController {
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Employee employee = employeeOptional.get();
-            if (!employeeCuDTO.getEmail().equals(employee.getEmail()) || !employeeCuDTO.getUserName().equals(employee.getUsername())) {
+            if (!employeeCuDTO.getEmail().equals(employee.getEmail()) || !employeeCuDTO.getUsername().equals(employee.getUsername())) {
                 log.info("User {} requested to update the employee with id: '{}'. USERNAME OR EMAIL IS NOT CORRECT.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "EMPLOYEE_USERNAME_OR_EMAIL_INCORRECT");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -330,12 +329,11 @@ public class EmployeeController {
      */
     @PutMapping(value = "/{id}/activate", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> activateEmployee(@PathVariable(value = "id") Long id,
-                                                            @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> activateEmployee(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to activate the employee with id: '{}'.", user.getUsername(), id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
-            if (!employeeOptional.isPresent()) {
+            if (employeeOptional.isEmpty()) {
                 log.info("User {} requested to activate the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -372,8 +370,7 @@ public class EmployeeController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id,
-                                                                          @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the employee with id: {}.", user.getUsername(), id);
             if (!eRepository.existsById(id)) {

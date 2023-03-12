@@ -12,7 +12,7 @@ public class EmployeeCuDTO {
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */
 
     private String email;
-    private String userName;
+    private String username;
     private String firstName;
     private String lastName;
     private String password;
