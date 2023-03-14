@@ -1,5 +1,6 @@
 package fi.haagahelia.stockmanager.service.order;
 
+import fi.haagahelia.stockmanager.exception.EmptyOrderException;
 import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
@@ -43,7 +44,7 @@ public class CustomerOrderService implements CustomerOrderManagerRepository {
      */
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public CustomerOrder customerOrderShipment(Long orderId) throws UnknownOrderException, ProductStockException, OrderStateException {
+    public CustomerOrder customerOrderShipment(Long orderId) throws UnknownOrderException, ProductStockException, OrderStateException, EmptyOrderException {
         log.debug("Shipment of the customer order with id: " + orderId);
         CustomerOrder customerOrder = em.find(CustomerOrder.class, orderId);
         if (customerOrder == null) {
@@ -58,7 +59,7 @@ public class CustomerOrderService implements CustomerOrderManagerRepository {
         List<CustomerOrderLine> customerOrderLines = query.getResultList();
         if (customerOrderLines.size() < 1) {
             log.debug("The customer order: {}, must have at least one order line.", orderId);
-            throw new ProductStockException("The customer order " + orderId + ", must have at least one order line.");
+            throw new EmptyOrderException("The customer order " + orderId + ", must have at least one order line.");
         }
         try {
             for (CustomerOrderLine orderLine : customerOrderLines) {

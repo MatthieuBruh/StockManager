@@ -6,6 +6,7 @@ import fi.haagahelia.stockmanager.controller.user.EmployeeController;
 import fi.haagahelia.stockmanager.dto.common.ErrorResponse;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderDTO;
+import fi.haagahelia.stockmanager.exception.EmptyOrderException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
@@ -82,7 +83,7 @@ public class CustomerOrderController {
         }
         if (customerOrderDTO.getCustomerDTO() != null) {
             Long customerId = customerOrderDTO.getId();
-            Link orderOfACustomer = linkTo(CustomerOrderController.class).slash("/" + customerId + "/orders").withRel("Orders from this customer");
+            Link orderOfACustomer = linkTo(CustomerOrderController.class).slash("/" + customerId + "/orders").withRel("this-customer-orders");
             customerOrderDTO.add(orderOfACustomer);
         }
         return customerOrderDTO;
@@ -346,7 +347,11 @@ public class CustomerOrderController {
             customerOrder.setDeliveryDate(orderCuDTO.getDeliveryDate()); customerOrder.setSent(false);
             if (orderCuDTO.getCustomerId() != null) {
                 Optional<Customer> customerOptional = cRepository.findById(orderCuDTO.getCustomerId());
-                customerOrder.setCustomer(customerOptional.get());
+                if (customerOptional.isPresent()) {
+                    customerOrder.setCustomer(customerOptional.get());
+                } else {
+                    customerOrder.setCustomer(null);
+                }
             } else {
                 customerOrder.setCustomer(null);
             }
@@ -441,6 +446,10 @@ public class CustomerOrderController {
             log.info("User {} requested to send the customer order with id: '{}'. ORDER IS ALREADY SENT.", user.getUsername(), orderId);
             ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT");
             return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+        } catch (EmptyOrderException e) {
+            log.info("User {} requested to send the customer order with id: '{}'. ORDER HAS NO LINES.", user.getUsername(), orderId);
+            ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_EMPTY");
+            return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
         } catch (Exception e) {
             log.info("User {} requested to send the customer order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -519,7 +528,7 @@ public class CustomerOrderController {
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrder customerOrder = customerOrderOptional.get();
-            if (customerOrder.getDate().plusDays(3).isAfter(LocalDate.now())) {
+            if (LocalDate.now().isAfter(customerOrder.getDate().plusDays(3))) {
                 log.info("User {} requested to delete the customer order with id: '{}'. ORDER TOO OLD.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_TOO_OLD");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);

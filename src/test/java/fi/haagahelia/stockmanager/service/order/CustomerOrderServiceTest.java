@@ -1,5 +1,6 @@
 package fi.haagahelia.stockmanager.service.order;
 
+import fi.haagahelia.stockmanager.exception.EmptyOrderException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
 import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
@@ -116,7 +117,7 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipment() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipment() throws OrderStateException, UnknownOrderException, ProductStockException, EmptyOrderException {
         // Execution
         CustomerOrder shippedOrder = orderService.customerOrderShipment(customerOrder.getId());
         log.info("CUSTOMER ORDER SERVICE TEST - CUSTOMER ORDER SHIPMENT - Execution done.");
@@ -178,7 +179,7 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentCancel() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentCancel() throws OrderStateException, UnknownOrderException, ProductStockException, EmptyOrderException {
         // Execution
         orderService.customerOrderShipment(customerOrder.getId());
         CustomerOrder shippedOrder = orderService.customerOrderShipmentCancel(customerOrder.getId());
