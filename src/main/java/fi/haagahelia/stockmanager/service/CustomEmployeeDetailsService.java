@@ -8,7 +8,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.text.MessageFormat;
 import java.util.Optional;
 
 
@@ -26,7 +25,7 @@ public class CustomEmployeeDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         try {
             Optional<Employee> employeeOptional = eRepository.findByUsername(username);
-            if (!employeeOptional.isPresent()) {
+            if (employeeOptional.isEmpty()) {
                 throw new UsernameNotFoundException("No employee found with the username: " + username);
             }
 

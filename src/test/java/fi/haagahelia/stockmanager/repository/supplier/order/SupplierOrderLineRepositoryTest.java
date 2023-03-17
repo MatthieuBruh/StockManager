@@ -38,9 +38,6 @@ public class SupplierOrderLineRepositoryTest {
     @Autowired
     private TestEntityManager testEntityManager;
 
-    private Category category;
-    private Brand brand;
-    private Supplier supplier;
     private Product product;
     private SupplierOrder supplierOrder;
     private SupplierOrderLine supplierOrderLine;
@@ -55,15 +52,15 @@ public class SupplierOrderLineRepositoryTest {
         em.createQuery("DELETE Brand").executeUpdate();
         em.createQuery("DELETE Category").executeUpdate();
 
-        category = new Category("Motherboard", "This category is for the motherboards");
+        Category category = new Category("Motherboard", "This category is for the motherboards");
         em.persist(category);
         log.debug("SUPPLIER ORDER LINE TEST - SET UP - New category saved: " + category);
 
-        brand = new Brand("Asus");
+        Brand brand = new Brand("Asus");
         em.persist(brand);
         log.debug("SUPPLIER ORDER LINE TEST - SET UP - New brand saved: " + brand);
 
-        supplier = new Supplier("Camido", "cioannou0@chron.com", null, null);
+        Supplier supplier = new Supplier("Camido", "cioannou0@chron.com", null, null);
         em.persist(supplier);
         log.info("SUPPLIER ORDER LINE TEST - SET UP - New supplier saved: " + supplier);
 

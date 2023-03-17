@@ -8,8 +8,6 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 public class SupplierOrderCuDTO {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */

@@ -151,7 +151,7 @@ public class BrandController {
         try {
             log.info("User {} is requesting the brand with id {}", user.getUsername(), id);
             Optional<Brand> brandOptional = bRepository.findById(id);
-            if (!brandOptional.isPresent()) {
+            if (brandOptional.isEmpty()) {
                 log.info("User {} requested the brand with id {}. NO DATA FOUND", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_DATA_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

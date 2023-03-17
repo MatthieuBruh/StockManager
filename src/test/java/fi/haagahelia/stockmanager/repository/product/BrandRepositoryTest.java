@@ -55,9 +55,9 @@ public class BrandRepositoryTest {
         // Verification
         log.debug("BRAND TEST - FIND BY ID - Brand verification");
         assertTrue(brandOptional.isPresent());
-        Brand brandFounnd = brandOptional.get();
-        assertNotNull(brandFounnd.getId()); assertEquals(victorinox.getId(), brandFounnd.getId());
-        assertNotNull(brandFounnd.getName()); assertEquals(victorinox.getName(), brandFounnd.getName());
+        Brand brandFound = brandOptional.get();
+        assertNotNull(brandFound.getId()); assertEquals(victorinox.getId(), brandFound.getId());
+        assertNotNull(brandFound.getName()); assertEquals(victorinox.getName(), brandFound.getName());
     }
 
     /**

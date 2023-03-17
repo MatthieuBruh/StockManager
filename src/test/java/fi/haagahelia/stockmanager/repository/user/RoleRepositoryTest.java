@@ -4,7 +4,6 @@ import fi.haagahelia.stockmanager.model.user.Role;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,11 +68,10 @@ public class RoleRepositoryTest {
     }
 
     /**
-     * This test is used to ensure that the role repository can't find an non-existing role by a wrong id.
-     * @throws Exception An exception that is throw if the test does not pass.
+     * This test is used to ensure that the role repository can't find a non-existing role by a wrong id.
      */
     @Test
-    public void notFoundById() throws Exception {
+    public void notFoundById() {
         // Execution
         Optional<Role> roleOptional = rRepository.findById(99999999L);
         // Verification
@@ -83,10 +81,9 @@ public class RoleRepositoryTest {
 
     /**
      * This test is used to ensure that we can find a role by its name.
-     * @throws Exception An exception that is throw if the test does not pass.
      */
     @Test
-    public void findByName() throws Exception {
+    public void findByName() {
         // Initialization
         Role role = new Role( "ROLE_FindByName", "This is the role that should be find by its name.");
         log.debug("ROLE TEST - FIND BY NAME - New role created: " + role);
@@ -111,10 +108,9 @@ public class RoleRepositoryTest {
 
     /**
      * This test is used to ensure that the role repository can't find a name that does not exist.
-     * @throws Exception An exception that is throw if the test does not pass.
      */
     @Test
-    public void notFoundByName() throws Exception {
+    public void notFoundByName() {
         // Execution
         Optional<Role> roleOptional = rRepository.findByName("NO NAME");
         // Verification
@@ -124,10 +120,9 @@ public class RoleRepositoryTest {
 
     /**
      * This test is used t ensure that the role repository can say if a role exists or not by a given name.
-     * @throws Exception An exception that is throw if the test does not pass.
      */
     @Test
-    public void existsByName() throws Exception {
+    public void existsByName() {
         // Initialization
         Role role = new Role( "ROLE_ExistsByName", "This is the role that should exists by its name.");
         EntityManager em = testEntityManager.getEntityManager();
@@ -144,10 +139,9 @@ public class RoleRepositoryTest {
 
     /**
      * This test is used to ensure that a non-existing role cannot be considered as existing by the role repository.
-     * @throws Exception An exception that is throw if the test does not pass.
      */
     @Test
-    public void doestExistByName() throws Exception {
+    public void doestExistByName() {
         // Execution
         Boolean result = rRepository.existsByName("NO NAME EXISTING");
         // Verification

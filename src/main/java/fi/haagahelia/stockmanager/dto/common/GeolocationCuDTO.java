@@ -5,8 +5,6 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 public class GeolocationCuDTO {
     private String streetName;
     private String streetNumber;

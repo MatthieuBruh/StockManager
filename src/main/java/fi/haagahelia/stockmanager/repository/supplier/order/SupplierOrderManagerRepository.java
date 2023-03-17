@@ -1,11 +1,10 @@
 package fi.haagahelia.stockmanager.repository.supplier.order;
 
-import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
-import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
+import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import jakarta.transaction.Transactional;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SupplierOrderManagerRepository {
     @Transactional

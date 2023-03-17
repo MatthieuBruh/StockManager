@@ -50,7 +50,6 @@ public class CustomerOrderServiceTest {
     private Product productOne;
     private Product productTwo;
     private CustomerOrderLine customerOrderLineOne;
-    private CustomerOrderLine customerOrderLineTwo;
 
     @BeforeEach
     public void setUp() {
@@ -111,7 +110,7 @@ public class CustomerOrderServiceTest {
         em.persist(customerOrderLineOne);
         log.info("CUSTOMER ORDER SERVICE TEST - INIT - New customer order line saved: {}.", customerOrderLineOne);
 
-        customerOrderLineTwo = new CustomerOrderLine(5, 4.20, customerOrder, productTwo);
+        CustomerOrderLine customerOrderLineTwo = new CustomerOrderLine(5, 4.20, customerOrder, productTwo);
         em.persist(customerOrderLineTwo);
         log.info("CUSTOMER ORDER SERVICE TEST - INIT - New customer order line saved: {}.", customerOrderLineTwo);
     }
@@ -136,7 +135,7 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentOrderState() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentOrderState() {
         // Execution
         OrderStateException exception = assertThrows(OrderStateException.class, () -> {
             orderService.customerOrderShipment(customerOrder.getId());
@@ -150,11 +149,9 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentWrongOrderId() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentWrongOrderId() {
         // Execution
-        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> {
-            orderService.customerOrderShipment(99L);
-        });
+        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> orderService.customerOrderShipment(99L));
         log.info("CUSTOMER ORDER SERVICE TEST - CUSTOMER ORDER SHIPMENT WRONG ORDER ID EXCEPTION - Execution done.");
         // Verification
         assertNotNull(exception);
@@ -163,14 +160,12 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentNotEnoughStock() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentNotEnoughStock() {
         // Execution
         EntityManager em = testEntityManager.getEntityManager();
         customerOrderLineOne.setQuantity(50);
         em.persist(customerOrderLineOne);
-        ProductStockException exception = assertThrows(ProductStockException.class, () -> {
-            orderService.customerOrderShipment(customerOrder.getId());
-        });
+        ProductStockException exception = assertThrows(ProductStockException.class, () -> orderService.customerOrderShipment(customerOrder.getId()));
         log.info("CUSTOMER ORDER SERVICE TEST - CUSTOMER ORDER SHIPMENT NOT ENOUGH STOCK EXCEPTION - Execution done.");
         // Verification
         assertNotNull(exception);
@@ -199,11 +194,9 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentCancelNotSentCancelled() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentCancelNotSentCancelled() {
         // Execution
-        OrderStateException exception = assertThrows(OrderStateException.class, () -> {
-            orderService.customerOrderShipmentCancel(customerOrder.getId());
-        });
+        OrderStateException exception = assertThrows(OrderStateException.class, () -> orderService.customerOrderShipmentCancel(customerOrder.getId()));
         log.info("CUSTOMER ORDER SERVICE TEST - CUSTOMER ORDER SHIPMENT CANCEL ORDER STATE EXCEPTION - Execution done.");
         // Verification
         assertNotNull(exception);
@@ -212,7 +205,7 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentCancelAlreadyCancelled() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentCancelAlreadyCancelled() {
         // Execution
         OrderStateException exception = assertThrows(OrderStateException.class, () -> {
             orderService.customerOrderShipment(customerOrder.getId());
@@ -227,11 +220,9 @@ public class CustomerOrderServiceTest {
     }
 
     @Test
-    public void customerOrderShipmentCancelWrongOrderId() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void customerOrderShipmentCancelWrongOrderId() {
         // Execution
-        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> {
-            orderService.customerOrderShipmentCancel(99L);
-        });
+        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> orderService.customerOrderShipmentCancel(99L));
         log.info("CUSTOMER ORDER SERVICE TEST - CUSTOMER ORDER SHIPMENT CANCEL WRONG ORDER ID EXCEPTION - Execution done.");
         // Verification
         assertNotNull(exception);

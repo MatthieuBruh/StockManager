@@ -183,7 +183,7 @@ public class CustomerOrderLineController {
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Optional<CustomerOrderLine> orderLine = lineRepository.findByCustomerOrderIdAndProductId(orderId, productId);
-            if (!orderLine.isPresent()) {
+            if (orderLine.isEmpty()) {
                 log.info("User {} requested the customer order line: orderId: '{}' ; productId: '{}'. NO ORDER LINE FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -228,7 +228,7 @@ public class CustomerOrderLineController {
                     user.getUsername(), orderId, productId);
             // --------------- Order verification ---------------
             Optional<CustomerOrder> orderOptional = coRepository.findById(orderId);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER NOT FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -241,7 +241,7 @@ public class CustomerOrderLineController {
             }
             // --------------- Product verification ---------------
             Optional<Product> productOptional = pRepository.findById(productId);
-            if (!productOptional.isPresent()) {
+            if (productOptional.isEmpty()) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

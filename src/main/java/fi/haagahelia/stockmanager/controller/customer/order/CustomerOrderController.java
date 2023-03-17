@@ -188,7 +188,7 @@ public class CustomerOrderController {
         try {
             log.info("User {} is requesting the customer order with id: '{}'.", user.getUsername(), id);
             Optional<CustomerOrder> orderOptional = coRepository.findById(id);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested the customer order with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -392,7 +392,7 @@ public class CustomerOrderController {
         try {
             log.info("User {} is requesting to update the customer order with id: '{}'.", user.getUsername(), id);
             Optional<CustomerOrder> orderOptional = coRepository.findById(id);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested to update the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -522,7 +522,7 @@ public class CustomerOrderController {
         try {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);
             Optional<CustomerOrder> customerOrderOptional = coRepository.findById(id);
-            if (!customerOrderOptional.isPresent()) {
+            if (customerOrderOptional.isEmpty()) {
                 log.info("User {} requested to delete the customer order with id: '{}'. NO CUSTOMER ORDER FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

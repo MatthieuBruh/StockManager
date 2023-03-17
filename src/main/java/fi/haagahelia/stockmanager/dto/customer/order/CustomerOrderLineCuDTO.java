@@ -4,6 +4,7 @@ import lombok.*;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class CustomerOrderLineCuDTO {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */

@@ -255,7 +255,7 @@ public class ProductController {
         try {
             log.info("User {} is requesting the product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
-            if (!productOptional.isPresent()) {
+            if (productOptional.isEmpty()) {
                 log.info("User {} requested the product with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -292,7 +292,7 @@ public class ProductController {
         try {
             log.info("User {} is requesting the detailed product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
-            if (!productOptional.isPresent()) {
+            if (productOptional.isEmpty()) {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_PRODUCT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }

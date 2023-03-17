@@ -1,7 +1,6 @@
 package fi.haagahelia.stockmanager.repository.supplier.order;
 
 
-import fi.haagahelia.stockmanager.model.common.Geolocation;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
@@ -122,7 +121,6 @@ public class SupplierOrderRepositoryTest {
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - New supplier order saved: " + nextMonthOrder);
 
         // Execution
-        Specification<SupplierOrder> spec = null;
         Page<SupplierOrder> supplierOrders = suppOrderRepository.findBySupplierId(teklist.getId(), PageRequest.of(0, 10));
         // Verification
         log.info("SUPPLIER ORDERS TEST - FIND BY SUPPLIER ID - Supplier order verifications");
@@ -202,8 +200,7 @@ public class SupplierOrderRepositoryTest {
         log.info("SUPPLIER ORDERS TEST - FIND ALL - New supplier order saved: " + nextMonthOrder);
 
         // Execution
-        Specification<SupplierOrder> spec = null;
-        Page<SupplierOrder> supplierOrders = suppOrderRepository.findAll(spec, PageRequest.of(0, 10));
+        Page<SupplierOrder> supplierOrders = suppOrderRepository.findAll((Specification<SupplierOrder>) null, PageRequest.of(0, 10));
 
         // Verification
         log.info("SUPPLIER ORDERS TEST - FIND ALL - Supplier order verifications");

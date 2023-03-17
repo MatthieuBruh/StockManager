@@ -180,7 +180,7 @@ public class SupplierOrderController {
         try {
             log.info("User {} is requesting the supplier order with id: '{}'", user.getUsername(), id);
             Optional<SupplierOrder> supOrderOptional = sOrderRepository.findById(id);
-            if (!supOrderOptional.isPresent()) {
+            if (supOrderOptional.isEmpty()) {
                 log.info("User {} requested the supplier order with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -330,7 +330,7 @@ public class SupplierOrderController {
                 return new ResponseEntity<>(bm, validation.getFirst());
             }
             Optional<Supplier> supplierOptional = sRepository.findById(orderCuDTO.getSupplierId());
-            if (!supplierOptional.isPresent()) {
+            if (supplierOptional.isEmpty()) {
                 log.info("User {} requested to create a new supplier order, date: '{}'. NO SUPPLIER FOUND", user.getUsername(), orderCuDTO.getDate());
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -380,15 +380,13 @@ public class SupplierOrderController {
         try {
             log.info("User {} is requesting to update the supplier order with id: '{}'.", user.getUsername(), id);
             Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested to update the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             SupplierOrder supplierOrder = orderOptional.get();
             if (orderCuDTO.getDeliveryDate() != null) supplierOrder.setDeliveryDate(orderCuDTO.getDeliveryDate());
-            // if (orderCuDTO.getOrderIsSent() != null) supplierOrder.setOrderIsSent(orderCuDTO.getOrderIsSent());
-            // if (orderCuDTO.getIsReceived() != null) supplierOrder.setReceived(orderCuDTO.getIsReceived());
             log.debug("User {} requested to update the supplier order with id: '{}'. SAVING ORDER'S UPDATE.", user.getUsername(), supplierOrder.getDate());
             SupplierOrder savedOrder = sOrderRepository.save(supplierOrder);
             SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
@@ -545,7 +543,7 @@ public class SupplierOrderController {
         try {
             log.info("User {} is requesting to delete the supplier order with id: '{}'.", user.getUsername(), id);
             Optional<SupplierOrder> orderOptional = sOrderRepository.findById(id);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested to delete the supplier order with id: '{}'. NO SUPPLIER ORDER FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

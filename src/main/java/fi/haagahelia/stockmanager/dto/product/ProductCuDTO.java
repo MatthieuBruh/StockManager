@@ -5,8 +5,6 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 public class ProductCuDTO {
 
     /* --------------------------------------------------- FIELDS --------------------------------------------------- */

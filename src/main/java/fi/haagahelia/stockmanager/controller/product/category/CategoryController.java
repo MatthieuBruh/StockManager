@@ -152,12 +152,12 @@ public class CategoryController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCategoryndById(@PathVariable(value = "id") Long id,
+    public @ResponseBody ResponseEntity<?> getCategoryById(@PathVariable(value = "id") Long id,
                                                              @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the category with id: '{}'", user.getUsername(), id);
             Optional<Category> categoryOptional = cRepository.findById(id);
-            if (!categoryOptional.isPresent()) {
+            if (categoryOptional.isEmpty()) {
                 log.info("User {} requested the category with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -245,7 +245,7 @@ public class CategoryController {
         try {
             log.info("User {} is requesting to update the category with the id: '{}'.", user.getUsername(), id);
             Optional<Category> categoryOptional = cRepository.findById(id);
-            if (!categoryOptional.isPresent()) {
+            if (categoryOptional.isEmpty()) {
                 log.info("User {} requested to update the category with the id: '{}'. NO DATA FOUND", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CATEGORY_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

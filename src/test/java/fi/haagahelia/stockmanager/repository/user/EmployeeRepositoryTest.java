@@ -75,10 +75,9 @@ public class EmployeeRepositoryTest {
 
     /**
      * This test is used to verify that the employee repository can't find a non-existing employee by a wrong id.
-     * @throws Exception An exception that is throw if the test does not pass.
      */
     @Test
-    public void notFoundById() throws Exception {
+    public void notFoundById() {
         // Execution
         Optional<Employee> foundEmployee = eRepository.findById(999999L);
         // Verification

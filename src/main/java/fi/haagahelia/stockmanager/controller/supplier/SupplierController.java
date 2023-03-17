@@ -7,7 +7,6 @@ import fi.haagahelia.stockmanager.dto.supplier.SupplierCuDTO;
 import fi.haagahelia.stockmanager.dto.supplier.SupplierDTO;
 import fi.haagahelia.stockmanager.model.common.Geolocation;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
-import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.common.GeolocationRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
@@ -207,7 +206,7 @@ public class SupplierController {
         try {
             log.info("User {} is requesting the supplier with id: '{}'.", user.getUsername(), id);
             Optional<Supplier> supplierOptional = sRepository.findById(id);
-            if (!supplierOptional.isPresent()) {
+            if (supplierOptional.isEmpty()) {
                 log.info("User {} requested the supplier with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -296,7 +295,7 @@ public class SupplierController {
         try {
             log.info("User {} is requesting to update the supplier with name: '{}'.", user.getUsername(), id);
             Optional<Supplier> optionalSupplier = sRepository.findById(id);
-            if (!optionalSupplier.isPresent()) {
+            if (optionalSupplier.isEmpty()) {
                 log.info("User {} requested to update the supplier with name: '{}'. NO DATA FOUND", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

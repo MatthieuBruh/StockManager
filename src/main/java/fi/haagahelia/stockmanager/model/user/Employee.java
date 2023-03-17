@@ -192,8 +192,7 @@ public class Employee implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        if (!isBlocked) return true;
-        return false;
+        return !isBlocked;
     }
 
     @Override

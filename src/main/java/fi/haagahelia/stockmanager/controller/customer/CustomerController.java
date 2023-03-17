@@ -210,7 +210,7 @@ public class CustomerController {
         try {
             log.info("User {} is requesting the customer with email: '{}'.", user.getUsername(), email);
             Optional<Customer> customerOptional = cRepository.findByEmail(email);
-            if (!customerOptional.isPresent()) {
+            if (customerOptional.isEmpty()) {
                 log.info("User {} requested the customer with email: '{}'. NO DATA FOUND.", user.getUsername(), email);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -294,7 +294,7 @@ public class CustomerController {
         try {
             log.info("User {} is requesting to update the customer with email: '{}'.", user.getUsername(), email);
             Optional<Customer> customerOptional = cRepository.findByEmail(email);
-            if (!customerOptional.isPresent()) {
+            if (customerOptional.isEmpty()) {
                 log.info("User {} requested to update the customer with email: '{}'. NO CUSTOMER FOUND.", user.getUsername(), email);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -342,7 +342,7 @@ public class CustomerController {
         try {
             log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);
             Optional<Customer> customer = cRepository.findByEmail(email);
-            if (!customer.isPresent()) {
+            if (customer.isEmpty()) {
                 log.info("User {} requested to delete the customer with email: '{}'. NO DATA FOUND", user.getUsername(), email);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

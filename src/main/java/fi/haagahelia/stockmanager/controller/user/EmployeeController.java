@@ -187,7 +187,7 @@ public class EmployeeController {
         try {
             log.info("User {} is requesting to get the employee with id: '{}'.", user.getUsername(), id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
-            if (!employeeOptional.isPresent()) {
+            if (employeeOptional.isEmpty()) {
                 log.info("User {} requested to get the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
@@ -238,8 +238,9 @@ public class EmployeeController {
             employee.setPassword(passwordEncoder.encode(employeeCuDTO.getPassword()));
             employee.setActive(false); employee.setBlocked(true);
             Optional<Role> roleOptional = rRepository.findByName("ROLE_VENDOR");
-            if (!roleOptional.isPresent()) {
+            if (roleOptional.isEmpty()) {
                 log.info("User {} requested to create a new employee with email: '{}'. DEFAULT ROLE NOT FOUND.", user.getUsername(), employee.getEmail());
+                throw new Exception("ROLE NOT FOUND");
             }
             employee.addRole(roleOptional.get());
             log.warn("User {} requested to create a new employee with email: '{}'. SAVING EMPLOYEE.", user.getUsername(), employee.getEmail());
@@ -281,7 +282,7 @@ public class EmployeeController {
         try {
             log.info("User {} requested to update the employee with id: '{}'", "AUTH IS NOT SET", id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
-            if (!employeeOptional.isPresent()) {
+            if (employeeOptional.isEmpty()) {
                 log.info("User {} requested to update the employee with id: '{}'. NO DATA FOUND.", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

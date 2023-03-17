@@ -186,7 +186,7 @@ public class SupplierOrderLineController {
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
-            if (!orderLineOptional.isPresent()) {
+            if (orderLineOptional.isEmpty()) {
                 log.info("User {} requested the the line: supOrderId: '{}', productId: '{}'. NO DATA FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_LINES_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
@@ -231,7 +231,7 @@ public class SupplierOrderLineController {
             log.info("User {} is requesting to create a new supplier order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             // --------------- Order verifications ---------------
             Optional<SupplierOrder> orderOptional = soRepository.findById(orderId);
-            if (!orderOptional.isPresent()) {
+            if (orderOptional.isEmpty()) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "ORDER NOT FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_NOT_FOUND");
@@ -246,7 +246,7 @@ public class SupplierOrderLineController {
             }
             // --------------- Product verifications ---------------
             Optional<Product> productOptional = pRepository.findById(productId);
-            if (!productOptional.isPresent()) {
+            if (productOptional.isEmpty()) {
                 log.info("User {} requested to create a new supplier order line: orderId: '{}' ; productId: '{}'." +
                         "PRODUCT NOT FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_NOT_FOUND");
@@ -326,7 +326,7 @@ public class SupplierOrderLineController {
             log.info("User {} is requesting to delete the order line: supOrderId: {}, productId: {}.",
                     user.getUsername(), orderId, productId);
             Optional<SupplierOrderLine> orderLineOptional = soLineRepository.findBySupplierOrderIdAndProductId(orderId, productId);
-            if (!orderLineOptional.isPresent()) {
+            if (orderLineOptional.isEmpty()) {
                 log.info("User {} requested to delete the order line: supOrderId: {}, productId: {}. NO DATA FOUND.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "SUPPLIER_ORDER_LINE_NOT_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);

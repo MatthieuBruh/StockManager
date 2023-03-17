@@ -110,7 +110,7 @@ public class SupplierOrderServiceTest {
     }
 
     @Test
-    public void sendOrderByIdThrowsOrderStateException() throws OrderStateException, UnknownOrderException {
+    public void sendOrderByIdThrowsOrderStateException() {
         // Execution
         OrderStateException exception = assertThrows(OrderStateException.class, () -> {
             supplierOrderService.sendOrderById(supplierOrder.getId());
@@ -124,11 +124,9 @@ public class SupplierOrderServiceTest {
     }
 
     @Test
-    public void sendOrderByIdThrowsWrongIdException() throws OrderStateException, UnknownOrderException {
+    public void sendOrderByIdThrowsWrongIdException() {
         // Execution
-        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> {
-            supplierOrderService.sendOrderById(99999L);
-        });
+        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> supplierOrderService.sendOrderById(99999L));
         log.info("SUPPLIER ORDER MANAGER TEST - SEND ORDER BY ID WRONG ID EXCEPTION - Execution done.");
         // Verification
         assertNotNull(exception);
@@ -151,7 +149,7 @@ public class SupplierOrderServiceTest {
     }
 
     @Test
-    public void receiveOrderByIdOrderState() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void receiveOrderByIdOrderState() {
         // Execution
         OrderStateException exception = assertThrows(OrderStateException.class, () -> {
             supplierOrderService.receiveOrderById(supplierOrder.getId());
@@ -165,11 +163,9 @@ public class SupplierOrderServiceTest {
     }
 
     @Test
-    public void receiveOrderByIdWrongOrder() throws OrderStateException, UnknownOrderException, ProductStockException {
+    public void receiveOrderByIdWrongOrder() {
         // Execution
-        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> {
-            supplierOrderService.receiveOrderById(999L);
-        });
+        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> supplierOrderService.receiveOrderById(999L));
         log.info("SUPPLIER ORDER MANAGER TEST - RECEIVE ORDER BY ID WRONG ORDER - Execution done.");
         // Verification
         assertNotNull(exception);
@@ -213,9 +209,7 @@ public class SupplierOrderServiceTest {
         // Execution
         supplierOrderService.sendOrderById(supplierOrder.getId());
         supplierOrderService.receiveOrderById(supplierOrder.getId());
-        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> {
-            supplierOrderService.cancelReceiveOrder(999L);
-        });
+        UnknownOrderException exception = assertThrows(UnknownOrderException.class, () -> supplierOrderService.cancelReceiveOrder(999L));
         log.info("SUPPLIER ORDER MANAGER TEST - CANCEL RECEIVE ORDER BY ID WRONG ORDER ID - Execution done.");
         // Verification
         assertNotNull(exception);

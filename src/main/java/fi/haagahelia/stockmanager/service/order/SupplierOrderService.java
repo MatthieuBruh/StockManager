@@ -1,20 +1,18 @@
 package fi.haagahelia.stockmanager.service.order;
 
+import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
+import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLine;
 import fi.haagahelia.stockmanager.repository.supplier.order.SupplierOrderManagerRepository;
-import fi.haagahelia.stockmanager.exception.ProductStockException;
-import fi.haagahelia.stockmanager.exception.OrderStateException;
-import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceContextType;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
