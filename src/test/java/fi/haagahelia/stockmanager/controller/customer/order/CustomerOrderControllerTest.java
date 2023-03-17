@@ -2,27 +2,27 @@ package fi.haagahelia.stockmanager.controller.customer.order;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import fi.haagahelia.stockmanager.dto.authentication.AuthResponseDTO;
+import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderCuDTO;
+import fi.haagahelia.stockmanager.model.customer.Customer;
+import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.product.brand.Brand;
 import fi.haagahelia.stockmanager.model.product.category.Category;
 import fi.haagahelia.stockmanager.model.supplier.Supplier;
+import fi.haagahelia.stockmanager.model.user.Employee;
+import fi.haagahelia.stockmanager.model.user.Role;
+import fi.haagahelia.stockmanager.repository.customer.CustomerRepository;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderLineRepository;
+import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
 import fi.haagahelia.stockmanager.repository.product.BrandRepository;
 import fi.haagahelia.stockmanager.repository.product.CategoryRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
 import fi.haagahelia.stockmanager.repository.supplier.SupplierRepository;
-import fi.haagahelia.stockmanager.tools.LocalDateAdapter;
-import fi.haagahelia.stockmanager.dto.authentication.AuthResponseDTO;
-import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderCuDTO;
-import fi.haagahelia.stockmanager.model.customer.Customer;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
-import fi.haagahelia.stockmanager.model.user.Employee;
-import fi.haagahelia.stockmanager.model.user.Role;
-import fi.haagahelia.stockmanager.repository.customer.CustomerRepository;
-import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
 import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
 import fi.haagahelia.stockmanager.repository.user.RoleRepository;
+import fi.haagahelia.stockmanager.tools.LocalDateAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -206,7 +205,7 @@ public class CustomerOrderControllerTest {
         customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(5), false, employee, null));
 
         mvc.perform(MockMvcRequestBuilders
-                        .get("/api/customers/orders/delivery=" + LocalDate.now().plusDays(5).toString())
+                        .get("/api/customers/orders/delivery=" + LocalDate.now().plusDays(5))
                         .header("Authorization", token)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

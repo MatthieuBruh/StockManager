@@ -7,6 +7,7 @@ import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineCuDTO;
 import fi.haagahelia.stockmanager.dto.customer.order.CustomerOrderLineDTO;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
+import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLinePK;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderLineRepository;
@@ -37,7 +38,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Log4j2
 @RestController
-@RequestMapping("/api/customers/orders/{orderId}")
+@RequestMapping("/api/customers/orders")
 public class CustomerOrderLineController {
 
     /* ----------------------------------------- REPOSITORIES & CONSTRUCTOR ----------------------------------------- */
@@ -63,11 +64,10 @@ public class CustomerOrderLineController {
     private CustomerOrderLineDTO createHATEOAS(CustomerOrderLineDTO lineDTO) {
         Long orderId = lineDTO.getCustomerOrderDTO().getId();
         Long productId = lineDTO.getProductSimpleDTO().getId();
-
-        Link selfRel = linkTo(CustomerOrderLineController.class).slash(orderId).slash("details").slash(productId).withSelfRel();
+        Link selfRel = linkTo(CustomerOrderLineController.class).slash("order=" + orderId).slash("details/product=").slash(productId).withSelfRel();
         lineDTO.add(selfRel);
 
-        Link orderDetailsLink = linkTo(CustomerOrderLineController.class).slash(orderId).slash("details").withRel("order-details");
+        Link orderDetailsLink = linkTo(CustomerOrderLineController.class).slash("order=" + orderId).slash("details").withRel("order-details");
         lineDTO.add(orderDetailsLink);
 
         Link orderLink = linkTo(CustomerOrderController.class).slash(orderId).withRel("order");
@@ -118,7 +118,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.NO_CONTENT if no customer order line exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/details",produces = "application/json")
+    @GetMapping(value = "/order={orderId}/details",produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
                                                          @PageableDefault(size = 10) Pageable pageable,
@@ -167,11 +167,9 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.NO_CONTENT if no customer order line corresponds to the id. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/details/product={productId}", produces = "application/json")
+    @GetMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                           @PathVariable(value = "productId") Long productId,
-                                                           @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,  @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!coRepository.existsById(orderId)) {
@@ -221,7 +219,7 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @PostMapping(value = "/details/{productId}", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/order={orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                               @RequestBody CustomerOrderLineCuDTO cusOrderLineDTO, @AuthenticationPrincipal Employee user) {
@@ -236,7 +234,7 @@ public class CustomerOrderLineController {
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             CustomerOrder customerOrder = orderOptional.get();
-            if (customerOrder.getSent() || customerOrder.getDeliveryDate().isAfter(LocalDate.now())) {
+            if (customerOrder.getSent() || customerOrder.getDeliveryDate().isBefore(LocalDate.now())) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. ORDER ALREADY SENT OR DELIVERY DATE IS PASSED.", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "CUSTOMER_ORDER_ALREADY_SENT_OR_DELIVERY_DATE_PASSED");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
@@ -260,7 +258,7 @@ public class CustomerOrderLineController {
                 ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "CUSTOMER_ORDER_LINE_ALREADY_EXIST");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
-            if (cusOrderLineDTO.getQuantity() == null || cusOrderLineDTO.getQuantity() < 1) {
+            if (cusOrderLineDTO.getQuantity() < 1) {
                 log.info("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. INVALID QUANTITY", user.getUsername(), orderId, productId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(), "CUSTOMER_ORDER_LINE_INVALID_QUANTITY");
                 return new ResponseEntity<>(bm, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -274,6 +272,7 @@ public class CustomerOrderLineController {
             customerOrderLine.setProduct(product);
             customerOrderLine.setSellPrice(cusOrderLineDTO.getSellPrice());
             customerOrderLine.setQuantity(cusOrderLineDTO.getQuantity());
+            customerOrderLine.setCustomerOrderLinePK(new CustomerOrderLinePK(customerOrder.getId(), product.getId()));
             // --------------- SAVING DATA ---------------
             log.debug("User {} requested to create a new customer order line: orderId: '{}' ; productId: '{}'. SAVING CUSTOMER ORDER LINE.", user.getUsername(), orderId, productId);
             CustomerOrderLine savedLine = lineRepository.save(customerOrderLine);
@@ -305,10 +304,9 @@ public class CustomerOrderLineController {
      *      --> HttpStatus.PRECONDITION_FAILED if the customer order is already sent.
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
-    @DeleteMapping(value = "/details/product={productId}", produces = "application/json")
+    @DeleteMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
-                                                           @AuthenticationPrincipal Employee user) {
+    public @ResponseBody ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {
@@ -327,6 +325,7 @@ public class CustomerOrderLineController {
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to delete the customer order line: orderId: '{}'; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
