@@ -67,17 +67,20 @@ public class SupplierOrderController {
      * @return The dto model with the HATEOAS links.
      */
     private SupplierOrderDTO createHATEOAS(SupplierOrderDTO orderDTO) {
-        Link selfLink = linkTo(SupplierOrderController.class).slash(String.valueOf(orderDTO.getId())).withSelfRel();
+        Link selfLink = linkTo(SupplierOrderController.class).slash(orderDTO.getId()).withSelfRel();
         orderDTO.add(selfLink);
 
-        Link collectionLink = linkTo(SupplierOrderController.class).slash("").withRel("suppliers-orders");
+        Link collectionLink = linkTo(SupplierOrderController.class).slash("orders").withRel("supplier-orders");
         orderDTO.add(collectionLink);
 
         // Supplier related field
         if (orderDTO.getSupplierDTO() != null) {
-            Link supplierLink = linkTo(SupplierController.class)
-                    .slash(orderDTO.getSupplierDTO().getId()).withRel("supplier");
+            Long supplierId = orderDTO.getId();
+            Link supplierLink = linkTo(SupplierController.class).slash(supplierId).withRel("supplier");
             orderDTO.add(supplierLink);
+
+            Link orderOfACustomer = linkTo(SupplierOrderController.class).slash("/" + supplierId + "/orders").withRel("this-supplier-orders");
+            orderDTO.add(orderOfACustomer);
         }
         return orderDTO;
     }
@@ -206,7 +209,7 @@ public class SupplierOrderController {
      * We also add the HATEOAS links at the same time.
      * Finally, we return the list of SupplierOrderDTO to the user with an HttpStatus.OK.
      *
-     * @param id Correspond to the id of the Supplier.
+     * @param supplierId Correspond to the id of the Supplier.
      * @param user authenticated Employee object
      * @param pageable pagination information (page number, size, and sorting)
      * @param sort sorting information for the query
@@ -216,33 +219,33 @@ public class SupplierOrderController {
      *      --> HttpStatus.NO_CONTENT if no supplier order exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/{id}/orders", produces = "application/json")
+    @GetMapping(value = "/{supplierId}/orders", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getSpecSupplierOrders(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user,
+    public @ResponseBody ResponseEntity<?> getSpecSupplierOrders(@PathVariable(value = "supplierId") Long supplierId, @AuthenticationPrincipal Employee user,
                                                                  @PageableDefault(size = 10) Pageable pageable,
                                                                  @SortDefault.SortDefaults({
                                                                          @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
-            log.info("User {} is requesting all the orders related to the supplier: '{}'", user.getUsername(), id);
-            if (!sRepository.existsById(id)) {
+            log.info("User {} is requesting all the orders related to the supplier: '{}'", user.getUsername(), supplierId);
+            if (!sRepository.existsById(supplierId)) {
                 log.info("User {} requested the orders related to the supplier: '{}'. NO SUPPLIER WITH THIS ID.",
-                        user.getUsername(), id);
+                        user.getUsername(), supplierId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_SUPPLIER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(id, pageable);
-            if (supplierOrders.getSize() < 1) {
-                log.info("User {} requested the orders related to the supplier: '{}'. NO DATA FOUND.", user.getUsername(), id);
+            Page<SupplierOrder> supplierOrders = sOrderRepository.findBySupplierId(supplierId, pageable);
+            if (supplierOrders.getTotalElements() < 1) {
+                log.info("User {} requested the orders related to the supplier: '{}'. NO DATA FOUND.", user.getUsername(), supplierId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_SUPPLIER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<SupplierOrderDTO> supplierOrderDTOPage = convertSupplierOrder(supplierOrders);
-            supplierOrderDTOPage.add(linkTo(SupplierOrderController.class).slash(id).slash("orders").withRel("suppliers-orders"));
-            log.info("User {} requested the orders related to the supplier: '{}'. RETURNING DATA.", user.getUsername(), id);
+            supplierOrderDTOPage.add(linkTo(SupplierOrderController.class).slash(supplierId).slash("orders").withRel("suppliers-orders"));
+            log.info("User {} requested the orders related to the supplier: '{}'. RETURNING DATA.", user.getUsername(), supplierId);
             return new ResponseEntity<>(supplierOrderDTOPage, HttpStatus.OK);
         } catch (Exception e) {
-            log.info("User {} requested the orders related to the supplier: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            log.info("User {} requested the orders related to the supplier: '{}'. UNEXPECTED ERROR!", user.getUsername(), supplierId);
             System.out.println(e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -392,7 +395,7 @@ public class SupplierOrderController {
             SupplierOrderDTO supplierOrderDTO = SupplierOrderDTO.convert(savedOrder);
             createHATEOAS(supplierOrderDTO);
             log.info("User {} requested to update the supplier order with id: '{}'. RETURNING UPDATED ORDER.", user.getUsername(), supplierOrder.getDate());
-            return new ResponseEntity<>(supplierOrderDTO, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(supplierOrderDTO, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to update the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderCuDTO.getDate());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -549,9 +552,9 @@ public class SupplierOrderController {
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
             SupplierOrder supplierOrder = orderOptional.get();
-            if (supplierOrder.getDate().plusDays(3).isAfter(LocalDate.now()) || supplierOrder.getOrderIsSent()) {
+            if (LocalDate.now().isAfter(supplierOrder.getDate().plusDays(3)) || supplierOrder.getOrderIsSent()) {
                 log.info("User {} requested to delete the supplier order with id: '{}'. ORDER CANNOT BE DELETED.", user.getUsername(), id);
-                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_TOO_OLD");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.PRECONDITION_FAILED.getReasonPhrase(), "SUPPLIER_ORDER_TOO_OLD_OR_SENT");
                 return new ResponseEntity<>(bm, HttpStatus.PRECONDITION_FAILED);
             }
             log.debug("User {} requested to delete the supplier order with id: '{}'. DELETING SUPPLIER ORDER.", user.getUsername(), id);

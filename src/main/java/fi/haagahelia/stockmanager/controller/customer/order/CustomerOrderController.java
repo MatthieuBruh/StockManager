@@ -78,11 +78,10 @@ public class CustomerOrderController {
             customerOrderDTO.add(vendor);
         }
         if (customerOrderDTO.getCustomerDTO() != null) {
-            Link customer = linkTo(CustomerController.class).slash(customerOrderDTO.getCustomerDTO().getId()).withRel("customer");
-            customerOrderDTO.add(customer);
-        }
-        if (customerOrderDTO.getCustomerDTO() != null) {
             Long customerId = customerOrderDTO.getId();
+            Link customer = linkTo(CustomerController.class).slash(customerId).withRel("customer");
+            customerOrderDTO.add(customer);
+
             Link orderOfACustomer = linkTo(CustomerOrderController.class).slash("/" + customerId + "/orders").withRel("this-customer-orders");
             customerOrderDTO.add(orderOfACustomer);
         }
@@ -213,7 +212,7 @@ public class CustomerOrderController {
      * Fourthly, we convert all the CustomerOrder objects as CustomerOrderDTO. We add HATEOAS links at the same time.
      * Finally, we return the data to the user with an HttpStatus.Ok.
      * 
-     * @param id Corresponds to the id of the customer.
+     * @param customerId Corresponds to the id of the customer.
      * @param user authenticated Employee object
      * @param searchQuery the search query, which can be null or an empty string
      * @param pageable pagination information (page number, size, and sorting)
@@ -224,17 +223,17 @@ public class CustomerOrderController {
      *      --> HttpStatus.NO_CONTENT if no customer order exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/{id}/orders", produces = "application/json")
+    @GetMapping(value = "/{customerId}/orders", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomerOrders(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user,
+    public @ResponseBody ResponseEntity<?> getCustomerOrders(@PathVariable(value = "customerId") Long customerId, @AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
                                                              @SortDefault.SortDefaults({
                                                                      @SortDefault(sort = "id", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
-            log.info("User {} is requesting all the orders of the customer: {}.", user.getUsername(), id);
-            if (!cRepository.existsById(id)) {
-                log.info("User {} requested all the orders of the customer: {}. NO CUSTOMER FOUND.", user.getUsername(), id);
+            log.info("User {} is requesting all the orders of the customer: {}.", user.getUsername(), customerId);
+            if (!cRepository.existsById(customerId)) {
+                log.info("User {} requested all the orders of the customer: {}. NO CUSTOMER FOUND.", user.getUsername(), customerId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_CUSTOMER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
             }
@@ -243,18 +242,18 @@ public class CustomerOrderController {
                 spec = (root, query, cb) -> cb.like(cb.lower(root.get("id")), "%" + searchQuery.toLowerCase() + "%");
             }
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-            Page<CustomerOrder> customerOrders = coRepository.findByCustomerId(id, spec, pageable);
+            Page<CustomerOrder> customerOrders = coRepository.findByCustomerId(customerId, spec, pageable);
             if (customerOrders.getTotalElements() < 1) {
-                log.info("User {} requested all the orders of the customer: {}. NO ORDER FOUND.", user.getUsername(), id);
+                log.info("User {} requested all the orders of the customer: {}. NO ORDER FOUND.", user.getUsername(), customerId);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.NO_CONTENT.getReasonPhrase(), "NO_CUSTOMER_ORDER_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.NO_CONTENT);
             }
             PagedModel<CustomerOrderDTO> customerOrderDTOSPage = convertList(customerOrders);
-            customerOrderDTOSPage.add(linkTo(CustomerOrderController.class).slash(id).slash("orders").withRel("customers-orders"));
-            log.info("User {} requested all the orders of the customer: {}. RETURNING DATA.", user.getUsername(), id);
+            customerOrderDTOSPage.add(linkTo(CustomerOrderController.class).slash(customerId).slash("orders").withRel("customers-orders"));
+            log.info("User {} requested all the orders of the customer: {}. RETURNING DATA.", user.getUsername(), customerId);
             return new ResponseEntity<>(customerOrderDTOSPage, HttpStatus.OK);
         } catch (Exception e) {
-            log.info("User {} requested the customer order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            log.info("User {} requested the customer order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), customerId);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

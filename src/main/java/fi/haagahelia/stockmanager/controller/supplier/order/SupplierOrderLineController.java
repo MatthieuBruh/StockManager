@@ -119,7 +119,7 @@ public class SupplierOrderLineController {
      *      --> HttpStatus.NO_CONTENT if no supplier order line exists. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/{orderId}/details", produces = "application/json")
+    @GetMapping(value = "/order={orderId}/details", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getSupOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
                                                             @PageableDefault(size = 10) Pageable pageable,
@@ -169,7 +169,7 @@ public class SupplierOrderLineController {
      *      --> HttpStatus.NO_CONTENT if no supplier order line corresponds to the id. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @GetMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
+    @GetMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> getSupOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                            @AuthenticationPrincipal Employee user) {
@@ -223,7 +223,7 @@ public class SupplierOrderLineController {
      *      --> HttpStatus.XX if a criteria has not been validated. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
-    @PostMapping(value = "/{orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/order={orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<?> createOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                            @RequestBody SupplierOrderLineCuDTO orderCuDTO, @AuthenticationPrincipal Employee user) {
@@ -317,7 +317,7 @@ public class SupplierOrderLineController {
      *      --> HttpStatus.PRECONDITION_FAILED if the supplier order is already sent.
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
-    @DeleteMapping(value = "/{orderId}/details/product={productId}", produces = "application/json")
+    @DeleteMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
     public @ResponseBody ResponseEntity<ErrorResponse> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
                                                                        @PathVariable(value = "productId") Long productId,
@@ -343,8 +343,8 @@ public class SupplierOrderLineController {
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to delete the order line: orderId: '{}' ; productId: '{}'. UNEXPECTED ERROR!", user.getUsername(), orderId, productId);
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 }
