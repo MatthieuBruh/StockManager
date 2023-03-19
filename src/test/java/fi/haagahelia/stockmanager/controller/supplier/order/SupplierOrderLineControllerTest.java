@@ -3,9 +3,6 @@ package fi.haagahelia.stockmanager.controller.supplier.order;
 import com.google.gson.Gson;
 import fi.haagahelia.stockmanager.dto.authentication.AuthResponseDTO;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderLineCuDTO;
-import fi.haagahelia.stockmanager.model.customer.Customer;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.product.brand.Brand;
 import fi.haagahelia.stockmanager.model.product.category.Category;
@@ -14,8 +11,6 @@ import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLine;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.model.user.Role;
-import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderLineRepository;
-import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
 import fi.haagahelia.stockmanager.repository.product.BrandRepository;
 import fi.haagahelia.stockmanager.repository.product.CategoryRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
@@ -42,7 +37,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -79,15 +73,13 @@ public class SupplierOrderLineControllerTest {
     @Autowired
     private ProductRepository productRepository;
 
-    private Employee employee;
-
     private String token;
 
     @BeforeEach
     public void setUp() throws Exception {
         Role admin = new Role("ROLE_ADMIN", "For the admins"); roleRepository.save(admin);
         String password = "A1234";
-        employee = new Employee("main@haaga.fi", "main", "Main", "Haaga", new BCryptPasswordEncoder().encode(password), true, false);
+        Employee employee = new Employee("main@haaga.fi", "main", "Main", "Haaga", new BCryptPasswordEncoder().encode(password), true, false);
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
@@ -271,7 +263,7 @@ public class SupplierOrderLineControllerTest {
         Category category = categoryRepository.save(new Category("Motherboard", "For the motherboards"));
         Brand brand = brandRepository.save(new Brand("Asus"));
         Supplier supplier = supplierRepository.save(new Supplier("Yata", "supplier@yata.com", null, null));
-        Product product = productRepository.save(new Product("ROG Strix Z690-F", "empty", 310.40, 350.50, 20, 10, 20, brand, category, supplier));
+        productRepository.save(new Product("ROG Strix Z690-F", "empty", 310.40, 350.50, 20, 10, 20, brand, category, supplier));
 
         SupplierOrder supplierOrder = supplierOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(7), false, false, supplier));
         SupplierOrderLineCuDTO supplierOrderLineCuDTO = new SupplierOrderLineCuDTO(10, 301.10);
