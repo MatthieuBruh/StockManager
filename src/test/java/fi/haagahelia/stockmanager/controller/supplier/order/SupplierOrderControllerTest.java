@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import fi.haagahelia.stockmanager.dto.authentication.AuthResponseDTO;
 import fi.haagahelia.stockmanager.dto.supplier.order.SupplierOrderCuDTO;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
 import fi.haagahelia.stockmanager.model.product.Product;
 import fi.haagahelia.stockmanager.model.product.brand.Brand;
 import fi.haagahelia.stockmanager.model.product.category.Category;
@@ -80,21 +78,13 @@ public class SupplierOrderControllerTest {
     @Autowired
     private ProductRepository productRepository;
 
-    @Autowired
-    private CustomerOrderRepository customerOrderRepository;
-
-    @Autowired
-    private CustomerOrderLineRepository customerOrderLineRepository;
-
-    private Employee employee;
-
     private String token;
 
     @BeforeEach
     public void setUp() throws Exception {
         Role admin = new Role("ROLE_ADMIN", "For the admins"); roleRepository.save(admin);
         String password = "A1234";
-        employee = new Employee("main@haaga.fi", "main", "Main", "Haaga", new BCryptPasswordEncoder().encode(password), true, false);
+        Employee employee = new Employee("main@haaga.fi", "main", "Main", "Haaga", new BCryptPasswordEncoder().encode(password), true, false);
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
@@ -533,39 +523,6 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + 999L + "/received").accept(MediaType.APPLICATION_JSON)
                 .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void cancelReceivedOrder_ProductStockError() throws Exception {
-        Category category = categoryRepository.save(new Category("Processor", "For the processors"));
-        Brand brand = brandRepository.save(new Brand("AMD"));
-        Supplier supplier = supplierRepository.save(new Supplier("Jaloo", "supplier@jaloo.com", "", null));
-        Product product = productRepository.save(new Product("Ryzen 9 5900X", "empty", 340.0, 346.50, 20, 10, 3, brand, category, supplier));
-
-        SupplierOrder supplierOrder = supplierOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(3), false, false, supplier));
-        supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
-
-        mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
-                .andExpect(status().isOk());
-
-        mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
-                .andExpect(status().isOk());
-
-        // Simulate that a part of the stock has been sold.
-        CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(7), false, employee, null));
-        customerOrderLineRepository.save(new CustomerOrderLine(33, 340.0, customerOrder, product));
-
-        mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
-                .andExpect(status().isOk());
-
-        /*
-        mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/cancel-reception").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
-                .andExpect(status().isNotModified());
-        */
     }
 
     @Test

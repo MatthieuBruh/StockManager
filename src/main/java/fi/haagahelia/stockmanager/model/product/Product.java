@@ -33,7 +33,7 @@ public class Product {
     @Column(name = "pro_sale_price", nullable = false)
     private Double salePrice;
 
-    @Column(name = "pro_stock") // If a product has a stock has null, we don't want to order it again
+    @Column(name = "pro_stock")
     @Min(0)
     private Integer stock;
 

@@ -143,10 +143,7 @@ public class SupplierOrderService implements SupplierOrderManagerRepository {
         try {
             for (SupplierOrderLine line : orderLines) {
                 Product product = line.getProduct();
-                System.out.println("Product:" + product);
                 Integer stockDecrement = line.getQuantity() * product.getBatchSize();
-                System.out.println("Stock decrement: " + stockDecrement);
-                System.out.println("Remaining: " + (product.getStock() - stockDecrement));
                 if (product.getStock() - stockDecrement < 0) {
                     throw new ProductStockException("Product " + product.getId() + " cannot have a negative stock.");
                 }
