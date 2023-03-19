@@ -75,7 +75,6 @@ public class SupplierOrderLineControllerTest {
 
     private String token;
 
-
     @BeforeEach
     public void setUp() throws Exception {
         Role admin = new Role("ROLE_ADMIN", "For the admins"); roleRepository.save(admin);
