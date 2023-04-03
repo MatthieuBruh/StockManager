@@ -1,5 +1,6 @@
 package fi.haagahelia.stockmanager.security;
 
+import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
 import fi.haagahelia.stockmanager.security.jwt.JWTAuthenticationEntryPoint;
 import fi.haagahelia.stockmanager.security.jwt.JWTAuthenticationFilter;
 import fi.haagahelia.stockmanager.security.jwt.JWTUtils;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -34,12 +36,15 @@ public class SecurityConfig {
     private final JWTUtils jwtUtils;
     private final JWTAuthenticationEntryPoint jwtAuthEntryPoint;
     private final CustomEmployeeDetailsService userDetailsService;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public SecurityConfig(JWTUtils jwtUtils, JWTAuthenticationEntryPoint jwtAuthEntryPoint, CustomEmployeeDetailsService userDetailsService) {
+    public SecurityConfig(JWTUtils jwtUtils, JWTAuthenticationEntryPoint jwtAuthEntryPoint,
+                          CustomEmployeeDetailsService userDetailsService, EmployeeRepository employeeRepository) {
         this.jwtUtils = jwtUtils;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
         this.userDetailsService = userDetailsService;
+        this.employeeRepository = employeeRepository;
     }
 
     @Bean
@@ -55,6 +60,11 @@ public class SecurityConfig {
     @Bean
     public JWTAuthenticationFilter jwtAuthenticationFilter() {
         return new JWTAuthenticationFilter(jwtUtils, userDetailsService);
+    }
+
+    @Bean
+    public BlockedEmployeeFilter blockedUserFilter() {
+        return new BlockedEmployeeFilter(employeeRepository);
     }
 
     @Bean
@@ -91,6 +101,7 @@ public class SecurityConfig {
                 .httpBasic();
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(blockedUserFilter(), RequestCacheAwareFilter.class);
         return http.build();
     }
 
