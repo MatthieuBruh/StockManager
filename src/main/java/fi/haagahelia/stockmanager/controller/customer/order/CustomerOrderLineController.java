@@ -120,7 +120,7 @@ public class CustomerOrderLineController {
      */
     @GetMapping(value = "/order={orderId}/details",produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
                                                          @PageableDefault(size = 10) Pageable pageable,
                                                          @SortDefault.SortDefaults({
                                                                  @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
@@ -169,7 +169,7 @@ public class CustomerOrderLineController {
      */
     @GetMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,  @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,  @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!coRepository.existsById(orderId)) {
@@ -221,7 +221,7 @@ public class CustomerOrderLineController {
      */
     @PostMapping(value = "/order={orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+    public ResponseEntity<?> createCusOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
                                                               @RequestBody CustomerOrderLineCuDTO cusOrderLineDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create a new customer order line: orderId: '{}' ; productId: '{}'.",
@@ -306,7 +306,7 @@ public class CustomerOrderLineController {
      */
     @DeleteMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             if (!lineRepository.existsByCustomerOrderIdAndProductId(orderId, productId)) {

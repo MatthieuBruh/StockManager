@@ -1,7 +1,9 @@
 package fi.haagahelia.stockmanager.dto.supplier;
 
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor

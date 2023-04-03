@@ -1,6 +1,7 @@
 package fi.haagahelia.stockmanager.model.supplier.order;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
 import java.util.Objects;

@@ -116,7 +116,7 @@ public class GeolocationController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getGeolocations(@AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getGeolocations(@AuthenticationPrincipal Employee user,
                                                            @RequestParam(required = false) String searchQuery,
                                                            @PageableDefault(size = 10) Pageable pageable,
                                                            @SortDefault.SortDefaults({
@@ -168,7 +168,7 @@ public class GeolocationController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getGeolocationById(@PathVariable(value = "id") Long id,
+    public ResponseEntity<?> getGeolocationById(@PathVariable(value = "id") Long id,
                                                               @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the geolocation with id: '{}'.", user.getUsername(), id);
@@ -205,7 +205,7 @@ public class GeolocationController {
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createGeo(@RequestBody GeolocationCuDTO geoCuDTO,
+    public ResponseEntity<?> createGeo(@RequestBody GeolocationCuDTO geoCuDTO,
                                                      @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new geolocation: ({} {}, {}, {}).", user.getUsername(),
@@ -255,7 +255,7 @@ public class GeolocationController {
      */
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteGeolocation(@PathVariable(value = "id") Long id,
+    public ResponseEntity<ErrorResponse> deleteGeolocation(@PathVariable(value = "id") Long id,
                                                                          @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the geolocation with id: '{}'", user.getUsername(), id);

@@ -3,7 +3,6 @@ package fi.haagahelia.stockmanager.controller.product;
 import com.google.gson.Gson;
 import fi.haagahelia.stockmanager.dto.authentication.AuthResponseDTO;
 import fi.haagahelia.stockmanager.dto.product.ProductCuDTO;
-import fi.haagahelia.stockmanager.model.customer.Customer;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
 import fi.haagahelia.stockmanager.model.product.Product;
@@ -26,7 +25,6 @@ import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
 import fi.haagahelia.stockmanager.repository.user.RoleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -43,8 +41,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 

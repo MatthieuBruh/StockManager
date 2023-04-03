@@ -1,8 +1,8 @@
 package fi.haagahelia.stockmanager.service.order;
 
 import fi.haagahelia.stockmanager.exception.EmptyOrderException;
-import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.OrderStateException;
+import fi.haagahelia.stockmanager.exception.ProductStockException;
 import fi.haagahelia.stockmanager.exception.UnknownOrderException;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;

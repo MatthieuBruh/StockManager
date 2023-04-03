@@ -101,11 +101,9 @@ public class CategoryController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getALlCategories(@AuthenticationPrincipal Employee user,
-                                                            @RequestParam(required = false) String searchQuery,
-                                                            @PageableDefault(size = 10) Pageable pageable,
-                                                            @SortDefault.SortDefaults({
-                                                                    @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getALlCategories(@AuthenticationPrincipal Employee user, @RequestParam(required = false) String searchQuery,
+                                              @PageableDefault(size = 10) Pageable pageable,
+                                              @SortDefault.SortDefaults({@SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the categories.", user.getUsername());
             Specification<Category> spec = null;
@@ -152,8 +150,7 @@ public class CategoryController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCategoryById(@PathVariable(value = "id") Long id,
-                                                             @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getCategoryById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the category with id: '{}'", user.getUsername(), id);
             Optional<Category> categoryOptional = cRepository.findById(id);
@@ -191,8 +188,7 @@ public class CategoryController {
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createCategory(@RequestBody CategoryCuDTO categoryCuDTO,
-                                                          @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> createCategory(@RequestBody CategoryCuDTO categoryCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new category with the name: '{}'.",
                     user.getUsername(), categoryCuDTO.getName());
@@ -239,9 +235,8 @@ public class CategoryController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateCategory(@PathVariable(value = "id") Long id,
-                                                          @RequestBody CategoryCuDTO categoryCuDTO,
-                                                          @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> updateCategory(@PathVariable(value = "id") Long id, @RequestBody CategoryCuDTO categoryCuDTO,
+                                            @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to update the category with the id: '{}'.", user.getUsername(), id);
             Optional<Category> categoryOptional = cRepository.findById(id);
@@ -282,8 +277,7 @@ public class CategoryController {
      */
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteCategory(@PathVariable(value = "id") Long id,
-                                                                      @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<ErrorResponse> deleteCategory(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the category with id: '{}'", user.getUsername(), id);
             if (!cRepository.existsById(id)) {

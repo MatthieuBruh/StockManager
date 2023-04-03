@@ -1,11 +1,8 @@
 package fi.haagahelia.stockmanager.dto.customer.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import fi.haagahelia.stockmanager.dto.product.ProductCompleteDTO;
 import fi.haagahelia.stockmanager.dto.product.ProductSimpleDTO;
-import fi.haagahelia.stockmanager.model.customer.order.CustomerOrder;
 import fi.haagahelia.stockmanager.model.customer.order.CustomerOrderLine;
-import fi.haagahelia.stockmanager.model.product.Product;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

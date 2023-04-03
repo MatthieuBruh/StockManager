@@ -70,7 +70,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/suppliers", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> suppliersStats(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
+    public ResponseEntity<?> suppliersStats(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
         try {
             log.info("User {} is requesting to get general suppliers statistics.", user.getUsername());
             if (date == null) date = LocalDate.now();
@@ -120,7 +120,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/customers", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> customersStats(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
+    public ResponseEntity<?> customersStats(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
         try {
             log.info("User {} is requesting to get general customer statistics.", user.getUsername());
             if (date == null) date = LocalDate.now();
@@ -175,8 +175,8 @@ public class StatisticsController {
      */
     @GetMapping(value = "/employee={empId}")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> salesPerVendor(@PathVariable(value = "empId") Long empId, @AuthenticationPrincipal Employee user,
-                                                          @RequestParam(name = "date", required = false) LocalDate date) {
+    public ResponseEntity<?> salesPerVendor(@PathVariable(value = "empId") Long empId, @AuthenticationPrincipal Employee user,
+                                            @RequestParam(name = "date", required = false) LocalDate date) {
         try {
             log.info("User {} is requesting to get statistics for the vendor: {}.", user.getUsername(), empId);
             if (date == null) date = LocalDate.now();
@@ -241,7 +241,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/stock-to-sale-ratio", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> stockToSalesRatio(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
+    public ResponseEntity<?> stockToSalesRatio(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
         try {
             log.info("User {} is requesting to get the stock to sale ratio.", user.getUsername());
             if (date == null) date = LocalDate.now();
@@ -310,7 +310,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/sell-through-rate", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> SellThroughRate(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
+    public ResponseEntity<?> SellThroughRate(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false) LocalDate date) {
         try {
             log.info("User {} is requesting to get the sell-through rate.", user.getUsername());
             if (date == null) date = LocalDate.now();
@@ -384,7 +384,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/stock-outs", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> stockOuts(@AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> stockOuts(@AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to get the stock-outs.", user.getUsername());
             int outOfStock = 0;
@@ -444,7 +444,7 @@ public class StatisticsController {
      */
     @GetMapping(value = "/service-level", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> serviceLevel(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false ) LocalDate date) {
+    public ResponseEntity<?> serviceLevel(@AuthenticationPrincipal Employee user, @RequestParam(name = "date", required = false ) LocalDate date) {
         try {
             log.info("User {} is requesting to get the service-level percentage.", user.getUsername());
             if (date == null) date = LocalDate.now();

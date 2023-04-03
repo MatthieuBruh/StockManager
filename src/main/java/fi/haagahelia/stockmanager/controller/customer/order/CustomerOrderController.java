@@ -137,7 +137,7 @@ public class CustomerOrderController {
      */
     @GetMapping(value = "/orders", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomerOrders(@AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getCustomerOrders(@AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
                                                              @SortDefault.SortDefaults({
@@ -183,7 +183,7 @@ public class CustomerOrderController {
      */
     @GetMapping(value = "/orders/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomerOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getCustomerOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer order with id: '{}'.", user.getUsername(), id);
             Optional<CustomerOrder> orderOptional = coRepository.findById(id);
@@ -225,7 +225,7 @@ public class CustomerOrderController {
      */
     @GetMapping(value = "/{customerId}/orders", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomerOrders(@PathVariable(value = "customerId") Long customerId, @AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getCustomerOrders(@PathVariable(value = "customerId") Long customerId, @AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
                                                              @SortDefault.SortDefaults({
@@ -279,7 +279,7 @@ public class CustomerOrderController {
      */
     @GetMapping(value = "/orders/delivery={date}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustOrdersDate(@PathVariable(value = "date") LocalDate date, @AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getCustOrdersDate(@PathVariable(value = "date") LocalDate date, @AuthenticationPrincipal Employee user,
                                                              @RequestParam(required = false) String searchQuery,
                                                              @PageableDefault(size = 10) Pageable pageable,
                                                              @SortDefault.SortDefaults({
@@ -332,7 +332,7 @@ public class CustomerOrderController {
      */
     @PostMapping(value = "/orders", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createCustomerOrder(@AuthenticationPrincipal Employee user, @RequestBody CustomerOrderCuDTO orderCuDTO) {
+    public ResponseEntity<?> createCustomerOrder(@AuthenticationPrincipal Employee user, @RequestBody CustomerOrderCuDTO orderCuDTO) {
         try {
             log.info("User {} is requesting to create a new customer order.", user.getUsername());
             Pair<HttpStatus, String> validation = orderValidation(orderCuDTO);
@@ -385,7 +385,7 @@ public class CustomerOrderController {
      */
     @PutMapping(value = "/orders/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateOrder(@PathVariable(value = "id") Long id,
+    public ResponseEntity<?> updateOrder(@PathVariable(value = "id") Long id,
                                                        @AuthenticationPrincipal Employee user,
                                                        @RequestBody CustomerOrderCuDTO orderCuDTO) {
         try {
@@ -426,7 +426,7 @@ public class CustomerOrderController {
      */
     @PutMapping(value = "/orders/{id}/send", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> sendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> sendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to send the customer order with id: '{}'.", user.getUsername(), orderId);
             CustomerOrder customerOrder = orderManager.customerOrderShipment(orderId);
@@ -472,7 +472,7 @@ public class CustomerOrderController {
      */
     @PutMapping(value = "/orders/{id}/cancel-sending", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> cancelSendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> cancelSendOrder(@PathVariable(value = "id") Long orderId, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to cancel the shipment of the customer order with id: '{}'.", user.getUsername(), orderId);
             CustomerOrder customerOrder = orderManager.customerOrderShipmentCancel(orderId);
@@ -517,7 +517,7 @@ public class CustomerOrderController {
      */
     @DeleteMapping(value = "/orders/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> deleteOrder(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);
             Optional<CustomerOrder> customerOrderOptional = coRepository.findById(id);
@@ -561,7 +561,7 @@ public class CustomerOrderController {
      */
     @DeleteMapping(value = "/orders/{id}/force", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteOrderForce(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> deleteOrderForce(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer order with id: '{}'.", user.getUsername(), id);
             if (!coRepository.existsById(id)) {

@@ -1,6 +1,6 @@
 package fi.haagahelia.stockmanager.dto.authentication;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
 public class EmpLoginDTO {

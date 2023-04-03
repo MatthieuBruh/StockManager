@@ -12,8 +12,6 @@ import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrder;
 import fi.haagahelia.stockmanager.model.supplier.order.SupplierOrderLine;
 import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.model.user.Role;
-import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderLineRepository;
-import fi.haagahelia.stockmanager.repository.customer.order.CustomerOrderRepository;
 import fi.haagahelia.stockmanager.repository.product.BrandRepository;
 import fi.haagahelia.stockmanager.repository.product.CategoryRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;

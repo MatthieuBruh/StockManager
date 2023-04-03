@@ -9,7 +9,10 @@ import fi.haagahelia.stockmanager.repository.product.BrandRepository;
 import fi.haagahelia.stockmanager.repository.product.ProductRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.util.Pair;
 import org.springframework.data.web.PageableDefault;
@@ -92,11 +95,9 @@ public class BrandController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getAllBrands(@AuthenticationPrincipal Employee user,
-                                            @RequestParam(required = false) String searchQuery,
-                                            @PageableDefault(size = 10) Pageable pageable,
-                                            @SortDefault.SortDefaults({
-                                            @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getAllBrands(@AuthenticationPrincipal Employee user, @RequestParam(required = false) String searchQuery,
+                                          @PageableDefault(size = 10) Pageable pageable,
+                                          @SortDefault.SortDefaults({ @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the brands.", user.getUsername());
             Specification<Brand> spec = null;
@@ -146,8 +147,7 @@ public class BrandController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getBrandById(@PathVariable(name = "id") Long id,
-                                                               @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getBrandById(@PathVariable(name = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the brand with id {}", user.getUsername(), id);
             Optional<Brand> brandOptional = bRepository.findById(id);
@@ -185,8 +185,7 @@ public class BrandController {
      */
     @PostMapping(produces = "application/json", consumes = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createNewBrand(@AuthenticationPrincipal Employee user,
-                                                                 @RequestBody BrandCuDTO brandCuDTO) {
+    public ResponseEntity<?> createNewBrand(@AuthenticationPrincipal Employee user, @RequestBody BrandCuDTO brandCuDTO) {
         try {
             log.info("User {} is requesting to create and save a new brand with the name: '{}'.",
                     user.getUsername(), brandCuDTO.getName());
@@ -233,8 +232,7 @@ public class BrandController {
      */
     @DeleteMapping(value = ("/{id}"))
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteBrand(@PathVariable(name = "id") Long id,
-                                                                   @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<ErrorResponse> deleteBrand(@PathVariable(name = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the brand with id: '{}'", user.getUsername(), id);
             if (!bRepository.existsById(id)) {

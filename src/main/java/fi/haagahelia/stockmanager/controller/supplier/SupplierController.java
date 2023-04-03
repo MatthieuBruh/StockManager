@@ -151,11 +151,9 @@ public class SupplierController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getSuppliers(@AuthenticationPrincipal Employee user,
-                                                        @RequestParam(required = false) String searchQuery,
-                                                        @PageableDefault(size = 10) Pageable pageable,
-                                                        @SortDefault.SortDefaults({
-                                                                @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getSuppliers(@AuthenticationPrincipal Employee user, @RequestParam(required = false) String searchQuery,
+                                          @PageableDefault(size = 10) Pageable pageable,
+                                          @SortDefault.SortDefaults({ @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the suppliers from the database.", user.getUsername());
             Specification<Supplier> spec = null;
@@ -202,7 +200,7 @@ public class SupplierController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getSupplierByID(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getSupplierByID(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the supplier with id: '{}'.", user.getUsername(), id);
             Optional<Supplier> supplierOptional = sRepository.findById(id);
@@ -239,7 +237,7 @@ public class SupplierController {
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createNewSupplier(@RequestBody SupplierCuDTO supplierCuDTO,  @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> createNewSupplier(@RequestBody SupplierCuDTO supplierCuDTO,  @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new supplier with name: '{}'.", user.getUsername(), supplierCuDTO.getName());
             Pair<HttpStatus, String> validation = validateSupplier(supplierCuDTO, false);
@@ -289,9 +287,8 @@ public class SupplierController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateSupplier(@PathVariable(value = "id") Long id,
-                                                          @RequestBody SupplierCuDTO supplierCuDTO,
-                                                          @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> updateSupplier(@PathVariable(value = "id") Long id, @RequestBody SupplierCuDTO supplierCuDTO,
+                                            @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to update the supplier with name: '{}'.", user.getUsername(), id);
             Optional<Supplier> optionalSupplier = sRepository.findById(id);
@@ -340,7 +337,7 @@ public class SupplierController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<ErrorResponse> deleteSupplierById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the supplier with id: '{}'.", user.getUsername(), id);
             if (!sRepository.existsById(id)) {

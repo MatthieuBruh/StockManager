@@ -18,7 +18,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -44,7 +47,7 @@ public class AuthenticationController {
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error happens.
      */
     @PostMapping(value = "/login")
-    public @ResponseBody ResponseEntity<?> login(@RequestBody @Valid EmpLoginDTO loginDTO) {
+    public ResponseEntity<?> login(@RequestBody @Valid EmpLoginDTO loginDTO) {
         log.info("Authentication for the user: {}.", loginDTO.getUsername());
         try {
             if (!eRepository.existsByUsername(loginDTO.getUsername())) throw new BadCredentialsException("INVALID_USERNAME_OR_PASSWORD");

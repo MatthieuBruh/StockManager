@@ -130,11 +130,9 @@ public class EmployeeController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getEmployees(@AuthenticationPrincipal Employee user,
-                                                        @RequestParam(required = false) String searchQuery,
-                                                        @PageableDefault(size = 10) Pageable pageable,
-                                                        @SortDefault.SortDefaults({
-                                                                @SortDefault(sort = "username", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getEmployees(@AuthenticationPrincipal Employee user, @RequestParam(required = false) String searchQuery,
+                                          @PageableDefault(size = 10) Pageable pageable,
+                                          @SortDefault.SortDefaults({ @SortDefault(sort = "username", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting to get all employees.", user.getUsername());
             Specification<Employee> spec = null;
@@ -182,8 +180,7 @@ public class EmployeeController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getEmployeeById(@PathVariable(value = "id") Long id,
-                                                           @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getEmployeeById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to get the employee with id: '{}'.", user.getUsername(), id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
@@ -222,8 +219,7 @@ public class EmployeeController {
      */
     @PostMapping(produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createEmployee(@AuthenticationPrincipal Employee user,
-                                                          @RequestBody EmployeeCuDTO employeeCuDTO) {
+    public ResponseEntity<?> createEmployee(@AuthenticationPrincipal Employee user, @RequestBody EmployeeCuDTO employeeCuDTO) {
         try {
             log.info("User {} is requesting to create a new employee with email: '{}'.", user.getUsername(), employeeCuDTO.getEmail());
             Pair<HttpStatus, String> validation = validateEmployee(employeeCuDTO, false);
@@ -276,9 +272,8 @@ public class EmployeeController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateEmployee(@PathVariable(value = "id") Long id,
-                                                          @RequestBody EmployeeCuDTO employeeCuDTO,
-                                                          @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> updateEmployee(@PathVariable(value = "id") Long id, @RequestBody EmployeeCuDTO employeeCuDTO,
+                                            @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} requested to update the employee with id: '{}'", "AUTH IS NOT SET", id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
@@ -330,7 +325,7 @@ public class EmployeeController {
      */
     @PutMapping(value = "/{id}/activate", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> activateEmployee(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> activateEmployee(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to activate the employee with id: '{}'.", user.getUsername(), id);
             Optional<Employee> employeeOptional = eRepository.findById(id);
@@ -371,7 +366,7 @@ public class EmployeeController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<ErrorResponse> deleteEmployeeById(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the employee with id: {}.", user.getUsername(), id);
             if (!eRepository.existsById(id)) {

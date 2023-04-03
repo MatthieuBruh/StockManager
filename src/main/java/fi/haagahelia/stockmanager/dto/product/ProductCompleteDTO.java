@@ -9,7 +9,6 @@ import fi.haagahelia.stockmanager.model.product.Product;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.hateoas.RepresentationModel;
 
 @Builder
 @Data

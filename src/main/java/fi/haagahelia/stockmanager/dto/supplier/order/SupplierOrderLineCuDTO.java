@@ -1,6 +1,7 @@
 package fi.haagahelia.stockmanager.dto.supplier.order;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Data
 @AllArgsConstructor

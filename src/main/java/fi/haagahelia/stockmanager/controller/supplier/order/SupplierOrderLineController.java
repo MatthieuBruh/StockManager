@@ -121,10 +121,9 @@ public class SupplierOrderLineController {
      */
     @GetMapping(value = "/order={orderId}/details", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getSupOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
-                                                            @PageableDefault(size = 10) Pageable pageable,
-                                                            @SortDefault.SortDefaults({
-                                                                    @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getSupOrderLines(@PathVariable(value = "orderId") Long orderId, @AuthenticationPrincipal Employee user,
+                                              @PageableDefault(size = 10) Pageable pageable,
+                                              @SortDefault.SortDefaults({ @SortDefault(sort = "quantity", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting the order lines that corresponds to the order: '{}'.", user.getUsername(), orderId);
             if (!soRepository.existsById(orderId)) {
@@ -171,8 +170,8 @@ public class SupplierOrderLineController {
      */
     @GetMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getSupOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
-                                                           @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getSupOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+                                             @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the the line: supOrderId: '{}', productId: '{}'.", user.getUsername(), orderId, productId);
             if (!soRepository.existsById(orderId)) {
@@ -225,8 +224,8 @@ public class SupplierOrderLineController {
      */
     @PostMapping(value = "/order={orderId}/details/product={productId}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
-                                                           @RequestBody SupplierOrderLineCuDTO orderCuDTO, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> createOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+                                             @RequestBody SupplierOrderLineCuDTO orderCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create a new supplier order line: orderId: '{}' ; productId: '{}'.", user.getUsername(), orderId, productId);
             // --------------- Order verifications ---------------
@@ -319,9 +318,8 @@ public class SupplierOrderLineController {
      */
     @DeleteMapping(value = "/order={orderId}/details/product={productId}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<ErrorResponse> deleteOrderLine(@PathVariable(value = "orderId") Long orderId,
-                                                                       @PathVariable(value = "productId") Long productId,
-                                                                       @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<ErrorResponse> deleteOrderLine(@PathVariable(value = "orderId") Long orderId, @PathVariable(value = "productId") Long productId,
+                                                         @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the order line: supOrderId: {}, productId: {}.",
                     user.getUsername(), orderId, productId);

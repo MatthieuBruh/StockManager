@@ -154,7 +154,7 @@ public class CustomerController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomers(@AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getCustomers(@AuthenticationPrincipal Employee user,
                                                         @RequestParam(required = false) String searchQuery,
                                                         @PageableDefault(size = 10) Pageable pageable,
                                                         @SortDefault.SortDefaults({
@@ -206,7 +206,7 @@ public class CustomerController {
      */
     @GetMapping(value = "/{email}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the customer with email: '{}'.", user.getUsername(), email);
             Optional<Customer> customerOptional = cRepository.findByEmail(email);
@@ -244,7 +244,7 @@ public class CustomerController {
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createCustomer(@RequestBody CustomerCuDTO customerCuDTO, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> createCustomer(@RequestBody CustomerCuDTO customerCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create and save a new customer with email: '{}'", user.getUsername(), customerCuDTO.getEmail());
             Pair<HttpStatus, String> validation = validateCustomer(customerCuDTO, false);
@@ -288,7 +288,7 @@ public class CustomerController {
      */
     @PutMapping(value = "/{email}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateCustomer(@PathVariable(value = "email") String email,
+    public ResponseEntity<?> updateCustomer(@PathVariable(value = "email") String email,
                                                           @RequestBody CustomerCuDTO customerCuDTO,
                                                           @AuthenticationPrincipal Employee user) {
         try {
@@ -338,7 +338,7 @@ public class CustomerController {
      */
     @DeleteMapping(value = "/{email}", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> deleteCustomer(@PathVariable(value = "email") String email, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the customer with email: '{}'", user.getUsername(), email);
             Optional<Customer> customer = cRepository.findByEmail(email);

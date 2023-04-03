@@ -198,11 +198,9 @@ public class ProductController {
      */
     @GetMapping(produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getProduct(@AuthenticationPrincipal Employee user,
-                                                      @RequestParam(required = false) String searchQuery,
-                                                      @PageableDefault(size = 10) Pageable pageable,
-                                                      @SortDefault.SortDefaults({
-                                                              @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
+    public ResponseEntity<?> getProduct(@AuthenticationPrincipal Employee user, @RequestParam(required = false) String searchQuery,
+                                        @PageableDefault(size = 10) Pageable pageable,
+                                        @SortDefault.SortDefaults({ @SortDefault(sort = "name", direction = Sort.Direction.ASC)}) Sort sort) {
         try {
             log.info("User {} is requesting all the products.", user.getUsername());
             Specification<Product> spec = null;
@@ -251,7 +249,7 @@ public class ProductController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_VENDOR', 'ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
@@ -288,7 +286,7 @@ public class ProductController {
      */
     @GetMapping(value = "/{id}/details", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> getProdDetail(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> getProdDetail(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting the detailed product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
@@ -324,7 +322,7 @@ public class ProductController {
      */
     @GetMapping(value = "/low", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')")
-    public @ResponseBody ResponseEntity<?> getLowStockProd(@AuthenticationPrincipal Employee user,
+    public ResponseEntity<?> getLowStockProd(@AuthenticationPrincipal Employee user,
                                                            @RequestParam(required = false) String searchQuery,
                                                            @PageableDefault(size = 10) Pageable pageable,
                                                            @SortDefault.SortDefaults({
@@ -382,7 +380,7 @@ public class ProductController {
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> createProduct(@RequestBody ProductCuDTO productCuDTO, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> createProduct(@RequestBody ProductCuDTO productCuDTO, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to create a new product with name: '{}'.", user.getUsername(), productCuDTO.getName());
             Pair<HttpStatus, String> validation = validateProduct(productCuDTO, false);
@@ -429,9 +427,8 @@ public class ProductController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> updateProduct(@PathVariable(value = "id") Long id,
-                                                         @RequestBody ProductCuDTO productCuDTO,
-                                                         @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> updateProduct(@PathVariable(value = "id") Long id, @RequestBody ProductCuDTO productCuDTO,
+                                           @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to update the product with id: '{}'.", user.getUsername(), id);
             Optional<Product> productOptional = pRepository.findById(id);
@@ -482,7 +479,7 @@ public class ProductController {
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public @ResponseBody ResponseEntity<?> deleteProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
+    public ResponseEntity<?> deleteProduct(@PathVariable(value = "id") Long id, @AuthenticationPrincipal Employee user) {
         try {
             log.info("User {} is requesting to delete the product with id: '{}'.", user.getUsername(), id);
             if (!pRepository.existsById(id)) {
