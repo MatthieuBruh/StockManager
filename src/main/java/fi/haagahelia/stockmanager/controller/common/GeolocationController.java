@@ -173,7 +173,7 @@ public class GeolocationController {
         try {
             log.info("User {} is requesting the geolocation with id: '{}'.", user.getUsername(), id);
             Optional<Geolocation> geoFounded = gRepository.findById(id);
-            if (!geoFounded.isPresent()) {
+            if (geoFounded.isEmpty()) {
                 log.info("User {} requested the geolocation with id: '{}'. NO DATA FOUND", user.getUsername(), id);
                 ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_GEOLOCATION_FOUND");
                 return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
