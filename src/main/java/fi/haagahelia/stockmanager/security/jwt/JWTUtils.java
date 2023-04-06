@@ -1,6 +1,5 @@
 package fi.haagahelia.stockmanager.security.jwt;
 
-import fi.haagahelia.stockmanager.security.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -13,16 +12,11 @@ import java.util.Date;
 @Component
 public class JWTUtils {
 
-    private static final String JWT_SECRET = SecurityUtils.jwtSecret;
-    private static final int EXPIRATION_DURATION = SecurityUtils.jwtExpiration;
-    private static final int EXPIRATION_UNIT = SecurityUtils.jwtExpirationUnit;
-
     public static String generateToken(String subject) {
         Date currentDate = new Date();
-
         Calendar calendarDate = Calendar.getInstance();
         calendarDate.setTime(currentDate);
-        calendarDate.add(EXPIRATION_UNIT, EXPIRATION_DURATION);
+        calendarDate.add(JWTConstants.JWT_EXPIRATION_UNIT, JWTConstants.JWT_EXPIRATION_DURATION);
 
         Date expireDate = calendarDate.getTime();
 
@@ -30,13 +24,13 @@ public class JWTUtils {
                 .setSubject(subject)
                 .setIssuedAt(new Date())
                 .setExpiration(expireDate)
-                .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
+                .signWith(SignatureAlgorithm.HS512, JWTConstants.JWT_SECRET)
                 .compact();
     }
 
     public String getUsernameFromJwt(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey(JWT_SECRET)
+                .setSigningKey(JWTConstants.JWT_SECRET)
                 .parseClaimsJws(token)
                 .getBody();
 
@@ -45,7 +39,7 @@ public class JWTUtils {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(JWT_SECRET).parseClaimsJws(token);
+            Jwts.parser().setSigningKey(JWTConstants.JWT_SECRET).parseClaimsJws(token);
 
             return true;
         } catch (Exception e) {

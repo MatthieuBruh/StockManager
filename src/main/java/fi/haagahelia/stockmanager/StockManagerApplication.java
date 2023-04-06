@@ -1,19 +1,7 @@
 package fi.haagahelia.stockmanager;
 
-import fi.haagahelia.stockmanager.model.user.Employee;
-import fi.haagahelia.stockmanager.model.user.Role;
-import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
-import fi.haagahelia.stockmanager.repository.user.RoleRepository;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @SpringBootApplication
 public class StockManagerApplication {

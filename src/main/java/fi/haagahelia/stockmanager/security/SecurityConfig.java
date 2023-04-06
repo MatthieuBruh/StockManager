@@ -8,6 +8,7 @@ import fi.haagahelia.stockmanager.service.CustomEmployeeDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,8 +26,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Objects;
 
 @Configuration
 @EnableWebSecurity
@@ -37,14 +38,16 @@ public class SecurityConfig {
     private final JWTAuthenticationEntryPoint jwtAuthEntryPoint;
     private final CustomEmployeeDetailsService userDetailsService;
     private final EmployeeRepository employeeRepository;
+    private final Environment environment;
 
     @Autowired
-    public SecurityConfig(JWTUtils jwtUtils, JWTAuthenticationEntryPoint jwtAuthEntryPoint,
-                          CustomEmployeeDetailsService userDetailsService, EmployeeRepository employeeRepository) {
+    public SecurityConfig(JWTUtils jwtUtils, JWTAuthenticationEntryPoint jwtAuthEntryPoint, CustomEmployeeDetailsService userDetailsService,
+                          EmployeeRepository employeeRepository, Environment environment) {
         this.jwtUtils = jwtUtils;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
         this.userDetailsService = userDetailsService;
         this.employeeRepository = employeeRepository;
+        this.environment = environment;
     }
 
     @Bean
@@ -70,13 +73,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = new ArrayList<>(); origins.add("http://localhost:3000");
-        List<String> methods = new ArrayList<>();
-        methods.add("GET"); methods.add("POST"); methods.add("PUT"); methods.add("DELETE");
-        List<String> headers = new ArrayList<>(); headers.add("Authorization"); headers.add("Content-Type");
-        configuration.setAllowedOrigins(origins);
-        configuration.setAllowedMethods(methods);
-        configuration.setAllowedHeaders(headers);
+        configuration.setAllowedOrigins(Arrays.asList(Objects.requireNonNull(environment.getProperty("spring.security.cors.allowed-origins")).split(",")));
+        configuration.setAllowedMethods(Arrays.asList(Objects.requireNonNull(environment.getProperty("spring.security.cors.allowed-methods")).split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(Objects.requireNonNull(environment.getProperty("spring.security.cors.allowed-headers")).split(",")));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

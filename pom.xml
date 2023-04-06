@@ -20,6 +20,8 @@
         <java.version>17</java.version>
     </properties>
 
+    <packaging>war</packaging>
+
     <dependencies>
 
         <!-- ====================================================================================================== -->
@@ -99,9 +101,20 @@
         </dependency>
 
         <!-- ====================================================================================================== -->
+        <!-- Deployment -->
+        <!-- ====================================================================================================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ====================================================================================================== -->
         <!-- Others -->
         <!-- ====================================================================================================== -->
 
+        <!-- Objects marshalling and unmarshalling -->
 
         <dependency>
             <groupId>javax.xml.bind</groupId>
@@ -114,6 +127,8 @@
             <artifactId>gson</artifactId>
         </dependency>
 
+        <!-- Code maintanance -->
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -123,6 +138,8 @@
     </dependencies>
 
     <build>
+        <finalName>stockmanager</finalName>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
