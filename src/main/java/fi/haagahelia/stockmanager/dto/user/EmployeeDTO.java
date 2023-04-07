@@ -18,7 +18,7 @@ public class EmployeeDTO extends RepresentationModel<EmployeeDTO> {
     private String username;
     private String firstName;
     private String lastName;
-    private String password;
+    // private String password;
     private Boolean isActive;
     private Boolean isBlocked;
 
@@ -31,7 +31,7 @@ public class EmployeeDTO extends RepresentationModel<EmployeeDTO> {
                 .username(employee.getUsername())
                 .firstName(employee.getFirstName())
                 .lastName(employee.getLastName())
-                .password(employee.getPassword())
+                // .password(employee.getPassword())
                 .isActive(employee.getActive())
                 .isBlocked(employee.getBlocked())
                 .build();

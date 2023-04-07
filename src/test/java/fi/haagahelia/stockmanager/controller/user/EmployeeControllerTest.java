@@ -134,7 +134,7 @@ public class EmployeeControllerTest {
 
         EmployeeCuDTO employeeCuDTO = new EmployeeCuDTO();
         employeeCuDTO.setEmail("john@haaga.fi"); employeeCuDTO.setUsername("jhndoe"); employeeCuDTO.setFirstName("John");
-        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A1234");
+        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A12346789");
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
@@ -153,8 +153,6 @@ public class EmployeeControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeCuDTO.getLastName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(false))
@@ -254,7 +252,7 @@ public class EmployeeControllerTest {
 
         EmployeeCuDTO employeeCuDTO = new EmployeeCuDTO();
         employeeCuDTO.setEmail("john@haaga.fi"); employeeCuDTO.setUsername("jhndoe"); employeeCuDTO.setFirstName("John");
-        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A1234");
+        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A12345678");
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
@@ -274,7 +272,7 @@ public class EmployeeControllerTest {
 
         EmployeeCuDTO employeeCuDTO = new EmployeeCuDTO();
         employeeCuDTO.setEmail("john@haaga.fi"); employeeCuDTO.setUsername("jhndoe"); employeeCuDTO.setFirstName("John");
-        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A1234");
+        employeeCuDTO.setLastName("Doe"); employeeCuDTO.setPassword("A12345678");
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
@@ -317,8 +315,6 @@ public class EmployeeControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeCuDTO.getLastName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(false))
@@ -453,8 +449,6 @@ public class EmployeeControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeSaved.getLastName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(true))
@@ -498,8 +492,6 @@ public class EmployeeControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeSaved.getLastName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(true))
@@ -567,8 +559,6 @@ public class EmployeeControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeSaved.getLastName()))
-                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(true))
