@@ -10,7 +10,7 @@ public class EmpChangePasswordDTO {
     private String newPasswordVerification;
 
     public boolean isValid() {
-        if (currentPassword == null || currentPassword.length() < 8) return false;
+        if (currentPassword == null) return false;
         if (newPassword == null || newPassword.length() < 8) return false;
         if (newPasswordVerification == null || newPasswordVerification.length() < 8) return false;
         if (!newPassword.equals(newPasswordVerification)) return false;

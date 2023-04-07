@@ -475,6 +475,142 @@ public class EmployeeControllerTest {
     }
 
     @Test
+    public void addEmployeeRole() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
+                .andExpect(MockMvcResultMatchers.jsonPath("email").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("email").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("email").value(employeeSaved.getEmail()))
+                .andExpect(MockMvcResultMatchers.jsonPath("username").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("username").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("username").value(employeeSaved.getUsername()))
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").value(employeeSaved.getFirstName()))
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeSaved.getLastName()))
+                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(true))
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").value(false))
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.self.href").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.self.href").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.employees.href").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.employees.href").isNotEmpty());
+    }
+
+    @Test
+    public void addEmployeeRole_Conflict() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        employeeRepository.save(employee); employee.setRoles(List.of(role));
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    public void addEmployeeRole_BadRequest() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        employeeRepository.save(employee); employee.setRoles(List.of(role));
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + 99L).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 888L + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void removeEmployeeRole() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        employeeRepository.save(employee); employee.setRoles(List.of(role));
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
+                .andExpect(MockMvcResultMatchers.jsonPath("email").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("email").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("email").value(employeeSaved.getEmail()))
+                .andExpect(MockMvcResultMatchers.jsonPath("username").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("username").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("username").value(employeeSaved.getUsername()))
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("firstName").value(employeeSaved.getFirstName()))
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("lastName").value(employeeSaved.getLastName()))
+                .andExpect(MockMvcResultMatchers.jsonPath("password").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("password").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isActive").value(true))
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("isBlocked").value(false))
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.self.href").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.self.href").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.employees.href").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("_links.employees.href").isNotEmpty());
+    }
+
+    @Test
+    public void removeEmployeeRole_NotAcceptable() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isNotAcceptable());
+    }
+
+    @Test
+    public void removeEmployeeRole_BadRequest() throws Exception {
+        Role role = new Role("ROLE_VENDOR", "This role is for the vendors.");
+        Role savedRole = roleRepository.save(role);
+        Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), true, false);
+        employeeRepository.save(employee); employee.setRoles(List.of(role));
+        Employee employeeSaved = employeeRepository.save(employee);
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + 99L).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 888L + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     public void deleteEmployeeById() throws Exception {
         Role role = new Role("ROLE_VENDOR", "This role is for the vendors."); roleRepository.save(role);
         Employee employee = new Employee("jean@haaga.fi", "jndup", "Jean", "Dupont", new BCryptPasswordEncoder().encode("TEST1234"), false, true);
