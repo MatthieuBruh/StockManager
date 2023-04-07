@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,10 +44,10 @@ public class EmployeeController {
 
     private final EmployeeRepository eRepository;
     private final RoleRepository rRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    public EmployeeController(EmployeeRepository eRepository, RoleRepository rRepository, PasswordEncoder passwordEncoder) {
+    public EmployeeController(EmployeeRepository eRepository, RoleRepository rRepository, BCryptPasswordEncoder passwordEncoder) {
         this.eRepository = eRepository;
         this.rRepository = rRepository;
         this.passwordEncoder = passwordEncoder;
@@ -97,7 +98,12 @@ public class EmployeeController {
                 return Pair.of(HttpStatus.NOT_FOUND, "EMPLOYEE_EMAIL_NOT_FOUND");
             }
         } else {
-            if (employeeCuDTO.getPassword() == null) return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_PASSWORD_NULL");
+            if (employeeCuDTO.getPassword() == null) {
+                return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_PASSWORD_NULL");
+            }
+            if (employeeCuDTO.getPassword().length() < 8) {
+                return Pair.of(HttpStatus.BAD_REQUEST, "EMPLOYEE_PASSWORD_TOO_SHORT");
+            }
             if (eRepository.existsByUsername(employeeCuDTO.getUsername())) {
                 return Pair.of(HttpStatus.CONFLICT, "EMPLOYEE_USERNAME_ALREADY_EXIST");
             }
@@ -236,7 +242,7 @@ public class EmployeeController {
             Optional<Role> roleOptional = rRepository.findByName("ROLE_VENDOR");
             if (roleOptional.isEmpty()) {
                 log.info("User {} requested to create a new employee with email: '{}'. DEFAULT ROLE NOT FOUND.", user.getUsername(), employee.getEmail());
-                throw new Exception("ROLE NOT FOUND");
+                throw new RuntimeException("ROLE NOT FOUND");
             }
             employee.addRole(roleOptional.get());
             log.warn("User {} requested to create a new employee with email: '{}'. SAVING EMPLOYEE.", user.getUsername(), employee.getEmail());
@@ -345,6 +351,120 @@ public class EmployeeController {
             return new ResponseEntity<>(employeeDTO, HttpStatus.OK);
         } catch (Exception e) {
             log.info("User {} requested to activate the employee with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * This method is used to add a role to an employee.
+     * Firstly, we verify that the user exists in the database.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
+     * Secondly, we also verify that the role exists in the database.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
+     * Thirdly, we check that the employee is no already in the role.
+     *      If yes, we return an HttpStatus.CONFLICT to the user.
+     * Fourthly, we add the role to the user and return an HttpStatus.Ok to the user.
+     *
+     * @param empId Corresponds to the id to the user to add the role.
+     * @param roleId Corresponds to the id of the role to be added.
+     * @param user Corresponds to the authenticated user
+     * @return a ResponseEntity containing a EmployeeDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the employee is in the new role. (EmployeeDTO)
+     *      --> HttpStatus.BAD_REQUEST if the corresponding employee or role has not been found. (ErrorMessage)
+     *      --> HttpStatus.CONFLICT if the employee is already in the role. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
+     */
+    @PutMapping(value = "/{empId}/add-role/{roleId}", produces = "application/json")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> addEmployeeRole(@PathVariable(value = "empId") Long empId, @PathVariable(value = "roleId") Long roleId, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to add a role of the employee with id: '{}'.", user.getUsername(), empId);
+            Optional<Employee> employeeOptional = eRepository.findById(empId);
+            if (employeeOptional.isEmpty()) {
+                log.info("User {} requested to add a role of the employee with id: '{}'. NO DATA FOUND (EMPLOYEE).", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Employee employee = employeeOptional.get();
+
+            Optional<Role> roleOptional = rRepository.findById(roleId);
+            if (roleOptional.isEmpty()) {
+                log.info("User {} requested to add a role of the employee with id: '{}'. NO DATA FOUND (ROLE).", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_ROLE_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Role role = roleOptional.get();
+
+            if (employee.getRoles().contains(role)) {
+                log.info("User {} requested to add a role of the employee with id: '{}'. EMPLOYEE ALREADY IN THE ROLE.", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "ROLE_ALREADY_SET");
+                return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
+            }
+            employee.addRole(role);
+            Employee savedEmployee = eRepository.save(employee);
+            EmployeeDTO employeeDTO = EmployeeDTO.convert(savedEmployee);
+            createHATEOAS(employeeDTO);
+            log.info("User {} requested to add a role of the employee with id: '{}'. ROLE ATTRIBUTED", user.getUsername(), empId);
+            return new ResponseEntity<>(employeeDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to add a role of the employee with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), empId);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * This method is used to add a role to an employee.
+     * Firstly, we verify that the user exists in the database.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
+     * Secondly, we also verify that the role exists in the database.
+     *      If not, we return an HttpStatus.BAD_REQUEST to the user.
+     * Thirdly, we check that the employee is no already in the role.
+     *      If yes, we return an HttpStatus.CONFLICT to the user.
+     * Fourthly, we remove the role to the user and return an HttpStatus.Ok to the user.
+     *
+     * @param empId Corresponds to the id to the user to add the role.
+     * @param roleId Corresponds to the id of the role to be added.
+     * @param user Corresponds to the authenticated user
+     * @return a ResponseEntity containing a EmployeeDTO objects or a Error Message.
+     *      --> HttpStatus.OK if the employee is in the new role. (EmployeeDTO)
+     *      --> HttpStatus.BAD_REQUEST if the corresponding employee or role has not been found. (ErrorMessage)
+     *      --> HttpStatus.NOT_ACCEPTABLE if the employee is not in the role. (ErrorMessage)
+     *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
+     */
+    @PutMapping(value = "/{empId}/remove-role/{roleId}", produces = "application/json")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<?> removeEmployeeRole(@PathVariable(value = "empId") Long empId, @PathVariable(value = "roleId") Long roleId, @AuthenticationPrincipal Employee user) {
+        try {
+            log.info("User {} is requesting to remove a role of the employee with id: '{}'.", user.getUsername(), empId);
+            Optional<Employee> employeeOptional = eRepository.findById(empId);
+            if (employeeOptional.isEmpty()) {
+                log.info("User {} requested to remove a role of the employee with id: '{}'. NO DATA FOUND (EMPLOYEE).", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_EMPLOYEE_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Employee employee = employeeOptional.get();
+
+            Optional<Role> roleOptional = rRepository.findById(roleId);
+            if (roleOptional.isEmpty()) {
+                log.info("User {} requested to remove a remove of the employee with id: '{}'. NO DATA FOUND (ROLE).", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "NO_ROLE_FOUND");
+                return new ResponseEntity<>(bm, HttpStatus.BAD_REQUEST);
+            }
+            Role role = roleOptional.get();
+
+            if (!employee.getRoles().contains(role)) {
+                log.info("User {} requested to remove a role of the employee with id: '{}'. EMPLOYEE ALREADY IN THE ROLE.", user.getUsername(), empId);
+                ErrorResponse bm = new ErrorResponse(HttpStatus.NOT_ACCEPTABLE.getReasonPhrase(), "ROLE_NOT_SET");
+                return new ResponseEntity<>(bm, HttpStatus.NOT_ACCEPTABLE);
+            }
+            employee.removeRole(role);
+            Employee savedEmployee = eRepository.save(employee);
+            EmployeeDTO employeeDTO = EmployeeDTO.convert(savedEmployee);
+            createHATEOAS(employeeDTO);
+            log.info("User {} requested to remove a role of the employee with id: '{}'. ROLE ATTRIBUTED", user.getUsername(), empId);
+            return new ResponseEntity<>(employeeDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("User {} requested to remove a role of the employee with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), empId);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
