@@ -7,7 +7,6 @@ import fi.haagahelia.stockmanager.model.user.Employee;
 import fi.haagahelia.stockmanager.model.user.Role;
 import fi.haagahelia.stockmanager.repository.user.EmployeeRepository;
 import fi.haagahelia.stockmanager.repository.user.RoleRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -24,7 +23,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
