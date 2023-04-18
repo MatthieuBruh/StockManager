@@ -1,5 +1,5 @@
 
-<h1 align="center">STOCK MANAGER</h1>
+<h1 align="center">STOCK MANAGEMENT SYSTEM</h1>
 <h2 align="center">Matthieu Brühwiler - Spring 2023 - V.1.0.0</h2>
 <br>
 
@@ -9,13 +9,26 @@
 1. [Introduction](#introduction)
 2. [Requirements](#requirements)
 3. [Installation](#installation)
+3.1 [Specify the environments variables to Apache Tomcat](#spec-env-variables)
+3.2 [Create the properties file](#properties-file)
+3.3 [WAR file of the application](#war-file)
+3.4 [Start the server](#start-server)
 4. [Usage](#usage)
+4.1. [Authentication](#authentication)
+4.2. [Employees](#employees)
+4.3. [Geolocations](#geolocations)
+4.4. [Customers](#customers)
+4.5. [Suppliers](#suppliers)
+4.6. [Brands](#brands)
+4.7. [Categories](#categories)
+4.8. [Products](#products)
+
 
 ---
 <br/>
 
 <a name="introduction"></a>
-## Introduction
+## 1. Introduction
 Stock Manager is a Java Spring application that allows you to manage: product stocks, supplier and customer orders, and your employees.
 
 It has been developed in the context of the Bachelor's thesis of Matthieu Brühwiler at the [University of Applied Sciences Haaga-Helia](https://www.haaga-helia.fi/en) in the spring of 2023.
@@ -29,7 +42,7 @@ The application is a backend application that uses a MariaDB database. It is pos
 <br/>
 
 <a name="requirements"></a>
-## Requirements
+## 2. Requirements
 The application is using the Java Spring 3.0.0.RELEASE framework. In order to run the application, you need to have the following components:
 * Java JDK **17** or higher.
 * MariaDB **10.10.0** or higher.
@@ -43,7 +56,7 @@ The application is using the Java Spring 3.0.0.RELEASE framework. In order to ru
 <br/>
 
 <a name="installation"></a>
-## Installation
+## 3. Installation
 *This installation tutorial is based for an Apache Tomcat server on a Windows operating system. The adaptation to another server or operating system is left to the user.*
 
 As stated in the requirements, you need to have a web server that supports Jakarta EE. For this tutorial, we will use an Apache Tomcat server 11.0.0. The installation of the server is not covered in this tutorial. You can find the installation instructions on the [Apache Tomcat website](https://tomcat.apache.org/download-11.cgi).
@@ -51,7 +64,8 @@ As stated in the requirements, you need to have a web server that supports Jakar
 To run the project, you need to specify various information to the Spring Framework.
 The Spring framework requires a properties file. 
 
-### 1. Specify the environments variables to Apache Tomcat
+<a name="spec-env-variables"></a>
+### 3.1 Specify the environments variables to Apache Tomcat
 In order to specify the environment variables to Apache Tomcat, you need to create a file named `stockmanager.xml` in the `[TOMCAT_INSTALLATION]/conf/Catalina/localhost`. This file should contain the following content:
 
 ```xml
@@ -61,7 +75,8 @@ In order to specify the environment variables to Apache Tomcat, you need to crea
 </Context>
 ```
 
-### 2. Create the properties file
+<a name="properties-file"></a>
+### 3.2 Create the properties file
 The Spring application requires you to provide information about the used profile, the database connection, the CORS properties, and the JWT properties. This file should be located in the `PATH/TO/PROPERTIES/FILE` specified in the previous step.
 
 Below is an **example** of a properties file:
@@ -91,7 +106,8 @@ jwt.expiration.unit=10
 jwt.secret=THIS_IS_A_BAD_SECRET
 ```
 
-### 3. WAR file of the application
+<a name="war-file"></a>
+### 3.3 WAR file of the application
 To deploy the application on Apache Tomcat, you need to create a WAR file. As written in the requirements, the project is based on the Maven framework. By this fact, to create the WAR file, you need to execute the following commands:
 
 ```shell
@@ -101,8 +117,8 @@ mvn install
 
 After creating the WAR file named `stockmanager.war`, you need to copy it in the `[TOMCAT_INSTALLATION]/webapps` folder.
 
-
-### 4. Start the server
+<a name="start-server"></a>
+### 3.4 Start the server
 At this point, you can now start the server. The Spring application manage by itself the database schema automatically. It will create, update, and delete the tables as needed.
 
 To run the Apache Tomcat server, you need to execute the `catalina.bat` file located in the `[TOMCAT_INSTALLATION]/bin` folder.
@@ -114,17 +130,19 @@ The application should be available at the following URL: `http://IP_ADDRESS:808
 <br/>
 
 <a name="usage"></a>
-## Usage
+## 4. Usage
 This chapter is an overview of the different endpoints of the application.
 
 Before reading details about the endpoints, all of them have four commons http status codes:
-* **200**: The request has succeeded.
+* **200 / 201**: The request has succeeded.
 * **400**: The request has failed because of a bad request.
 * **401**: The request has failed because the user is not authenticated.
 * **500**: The request has failed because of an internal server error.
 
+However, in the case of an error, whatever the status code is, the server always logs the error and returns a JSON object explaining the error.
 
-### 1. Authentication
+<a name="authentication"></a>
+### 4.1 Authentication
 To access the application, you need to be authenticated. The authentication is based on the JWT token.
 
 <table>
@@ -220,8 +238,8 @@ To access the application, you need to be authenticated. The authentication is b
 
 ---
 
-### 2. Employees
-
+<a name="employees"></a>
+### 4.2 Employees
 <table>
     <tr>
         <th>Endpoint</th>
@@ -462,7 +480,7 @@ To access the application, you need to be authenticated. The authentication is b
 </table>
 
 
-#### 2.1 Employee statistics
+#### 4.2.1 Employee statistics
 <table>
     <tr>
         <th>Endpoint</th>
@@ -471,11 +489,150 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Request Body</th>
         <th>HTTP Status</th>
     </tr>
+    <tr>
+        <td>/api/statistics/suppliers?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Get general statistics about suppliers.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No suppliers found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/customers?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Get general statistics about customers.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customers found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/employee={empId}?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Calculate statistics for an employee on a defined month and year.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No orders related to this employee found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Wrong employee id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/stock-to-sale-ratio?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Calculate the stock to sale ratio.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer orders found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/sell-through-rate?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Calculate the sell through rate.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer or supplier orders found.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>No product received during this period.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/stock-outs?date={optionalDate}</td>
+        <td>GET</td>
+        <td>Calculate the stock out rate.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No product found.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>No available product for this period.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/statistics/service-level</td>
+        <td>GET</td>
+        <td>Calculate the service level.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer or supplier order.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>
 
 ---
 
-### 3. Geolocations
+<a name="geolocations"></a>
+### 4.3 Geolocations
 <table>
     <tr>
         <th>Endpoint</th>
@@ -601,7 +758,8 @@ To access the application, you need to be authenticated. The authentication is b
 
 ---
 
-### 3. Customers
+<a name="customers"></a>
+### 4.4 Customers
 <table>
     <tr>
         <th>Endpoint</th>
@@ -766,7 +924,7 @@ To access the application, you need to be authenticated. The authentication is b
 </table>
 
 
-#### 3.1 Customer orders
+#### 4.4.1 Customer orders
 <table>
     <tr>
         <th>Endpoint</th>
@@ -944,7 +1102,7 @@ To access the application, you need to be authenticated. The authentication is b
 </table>
 
 
-#### 3.2 Customer order lines
+#### 4.4.2 Customer order lines
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1074,7 +1232,8 @@ To access the application, you need to be authenticated. The authentication is b
 
 ---
 
-### 4 Suppliers
+<a name="suppliers"></a>
+### 4.5 Suppliers
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1083,9 +1242,175 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Request Body</th>
         <th>HTTP Status</th>
     </tr>
+    <tr>
+        <td>/api/suppliers/</td>
+        <td>GET</td>
+        <td>Get all the suppliers.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No supplier found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/{id}</td>
+        <td>GET</td>
+        <td>Get a supplier by its id.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No supplier found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers</td>
+        <td>POST</td>
+        <td>Create a new supplier.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>The name of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>String</td>
+                    <td>The email of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>phoneNumber</td>
+                    <td>String</td>
+                    <td>The phone number of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>geolocationId</td>
+                    <td>Long</td>
+                    <td>The id of the geolocation of the supplier.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Name is null or empty</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Geolocation not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier already exist by name.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/{id}</td>
+        <td>PUT</td>
+        <td>Update a supplier. (email or phone number)</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>The name of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>String</td>
+                    <td>The email of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>phoneNumber</td>
+                    <td>String</td>
+                    <td>The phone number of the supplier.</td>
+                </tr>
+                <tr>
+                    <td>geolocationId</td>
+                    <td>Long</td>
+                    <td>The id of the geolocation of the supplier.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Supplier not found ; name is null or empty</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Geolocation not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier already exist by name.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/{id}</td>
+        <td>DELETE</td>
+        <td>Delete a supplier.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Supplier not found</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier has related orders or products</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>
 
-#### 4.1 Supplier orders
+#### 4.5.1 Supplier orders
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1094,9 +1419,283 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Request Body</th>
         <th>HTTP Status</th>
     </tr>
+    <tr>
+        <td>/api/suppliers/orders</td>
+        <td>GET</td>
+        <td>Get all supplier orders.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No supplier orders found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/{supplierId}/orders</td>
+        <td>GET</td>
+        <td>Get all supplier orders of a supplier.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No supplier orders found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}</td>
+        <td>GET</td>
+        <td>Get a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders</td>
+        <td>POST</td>
+        <td>Create a supplier order.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>date</td>
+                    <td>LocalDate</td>
+                    <td>The date of the order.</td>
+                </tr>
+                <tr>
+                    <td>deliveryDate</td>
+                    <td>LocalDate</td>
+                    <td>The delivery date of the order.</td>
+                </tr>
+                <tr>
+                    <td>orderIsSent</td>
+                    <td>Boolean</td>
+                    <td>True if the order is sent.</td>
+                </tr>
+                <tr>
+                    <td>isReceived</td>
+                    <td>Boolean</td>
+                    <td>True if the order is received.</td>
+                </tr>
+                <tr>
+                    <td>supplierId</td>
+                    <td>Long</td>
+                    <td>The id of the supplier.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Supplier not found ; date is null ; deliveryDate is null; orderIsSent is null ; isReceived is null</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}</td>
+        <td>PUT</td>
+        <td>Update a supplier order delivery date.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>date</td>
+                    <td>LocalDate</td>
+                    <td>The date of the order.</td>
+                </tr>
+                <tr>
+                    <td>deliveryDate</td>
+                    <td>LocalDate</td>
+                    <td>The delivery date of the order.</td>
+                </tr>
+                <tr>
+                    <td>orderIsSent</td>
+                    <td>Boolean</td>
+                    <td>True if the order is sent.</td>
+                </tr>
+                <tr>
+                    <td>isReceived</td>
+                    <td>Boolean</td>
+                    <td>True if the order is received.</td>
+                </tr>
+                <tr>
+                    <td>supplierId</td>
+                    <td>Long</td>
+                    <td>The id of the supplier.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Supplier order not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}/send</td>
+        <td>PUT</td>
+        <td>Update a supplier order to sent.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier order is already sent or has no line.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}/received</td>
+        <td>PUT</td>
+        <td>Receive a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>304</td>
+                    <td>Product stock of the order had a problem.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier order is already received.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}/cancel-reception</td>
+        <td>PUT</td>
+        <td>Cancel the reception of a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>304</td>
+                    <td>Product stock of the order had a problem.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier order is not received.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}</td>
+        <td>DELETE</td>
+        <td>Delete a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Supplier order is too old.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/{id}/force</td>
+        <td>DELETE</td>
+        <td>Delete a supplier order by force.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>
 
-#### 4.2 Supplier order lines
+#### 4.5.2 Supplier order lines
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1104,12 +1703,123 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Description</th>
         <th>Request Body</th>
         <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/order={orderId}/details</td>
+        <td>GET</td>
+        <td>Get all supplier order lines of a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No supplier order lines found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>api/suppliers/orders/order={orderId}/details/product={productId}</td>
+        <td>GET</td>
+        <td>Get a supplier order line of a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No supplier order line found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order or product.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/order={orderId}/details/product={productId}</td>
+        <td>PUT</td>
+        <td>Update a supplier order line of a supplier order.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>quantity</td>
+                    <td>Integer</td>
+                    <td>Quantity of the product.</td>
+                </tr>
+                <tr>
+                    <td>buyPrice</td>
+                    <td>Double</td>
+                    <td>Buy price of the product.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Supplier order not found ; product not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier order already exists.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Supplier order is already sent ; wrong product supplier ; invalid quantity.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/suppliers/orders/order={orderId}/details/product={productId}</td>
+        <td>DELETE</td>
+        <td>Delete a supplier order line of a supplier order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No corresponding supplier order line.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Supplier order is already sent.</td>
+                </tr>
+            </table>
+        </td>
     </tr>
 </table>
 
 ---
 
-### 5 Brands
+<a name="brands"></a>
+### 4.6 Brands
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1118,11 +1828,105 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Request Body</th>
         <th>HTTP Status</th>
     </tr>
+    <tr>
+        <td>/api/brands</td>
+        <td>GET</td>
+        <td>Get all brands.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No brand found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/brands/{id}</td>
+        <td>GET</td>
+        <td>Get a brand.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No brand found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/brands</td>
+        <td>POST</td>
+        <td>Create a brand.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Name of the brand.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Brand already exists or the name is null or empty.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Brand name already exists.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/brands/{id}</td>
+        <td>DELETE</td>
+        <td>Delete a brand.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Brand not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Brand has related products.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>
 
 ---
 
-### 6 Categories
+<a name="categories"></a>
+### 4.7 Categories
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1131,12 +1935,146 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Request Body</th>
         <th>HTTP Status</th>
     </tr>
+    <tr>
+        <td>/api/categories</td>
+        <td>GET</td>
+        <td>Get all categories.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No category found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/categories/{id}</td>
+        <td>GET</td>
+        <td>Get a category.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No category found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/categories</td>
+        <td>POST</td>
+        <td>Create a category.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Name of the category.</td>
+                </tr>
+                <tr>
+                    <td>description</td>
+                    <td>String</td>
+                    <td>Name of the category.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Category name is null or empty.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Category name already exists.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/categories/{id}</td>
+        <td>PUT</td>
+        <td>Update a category description.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Name of the category.</td>
+                </tr>
+                <tr>
+                    <td>description</td>
+                    <td>String</td>
+                    <td>Name of the category.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Category not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/categories/{id}</td>
+        <td>DELETE</td>
+        <td>Delete a category.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Category not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Category has related products.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>
-
 
 ---
 
-### 7 Products
+<a name="products"></a>
+### 4.8 Products
 <table>
     <tr>
         <th>Endpoint</th>
@@ -1144,5 +2082,263 @@ To access the application, you need to be authenticated. The authentication is b
         <th>Description</th>
         <th>Request Body</th>
         <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/products</td>
+        <td>GET</td>
+        <td>Get all products.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No product found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products/{id}</td>
+        <td>GET</td>
+        <td>Get a product.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No product found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products/{id}/details</td>
+        <td>GET</td>
+        <td>Get a product details.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No product found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products/low</td>
+        <td>GET</td>
+        <td>Get all products with a low stock. </td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No product found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products</td>
+        <td>POST</td>
+        <td>Create a product.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Name of the product.</td>
+                </tr>
+                <tr>
+                    <td>description</td>
+                    <td>String</td>
+                    <td>Description of the product.</td>
+                </tr>
+                <tr>
+                    <td>purchasePrice</td>
+                    <td>Double</td>
+                    <td>Purchase price of the product.</td>
+                </tr>
+                <tr>
+                    <td>salePrice</td>
+                    <td>Double</td>
+                    <td>Sale price of the product.</td>
+                </tr>
+                <tr>
+                    <td>stock</td>
+                    <td>Integer</td>
+                    <td>Stock of the product.</td>
+                </tr>
+                <tr>
+                    <td>minStock</td>
+                    <td>Integer</td>
+                    <td>Minimum stock of the product.</td>
+                </tr>
+                <tr>
+                    <td>batchSize</td>
+                    <td>Integer</td>
+                    <td>Batch size of the product.</td>
+                </tr>
+                <tr>
+                    <td>brandId</td>
+                    <td>Long</td>
+                    <td>Brand id of the product.</td>
+                </tr>
+                <tr>
+                    <td>categoryId</td>
+                    <td>Long</td>
+                    <td>Category id of the product.</td>
+                </tr>
+                <tr>
+                    <td>supplierId</td>
+                    <td>Long</td>
+                    <td>Supplier id of the product.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Invalid product information.</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Category, brand, or supplier not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Product already exists by name and supplier id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products/{id}</td>
+        <td>PUT</td>
+        <td>Update a product.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Name of the product.</td>
+                </tr>
+                <tr>
+                    <td>description</td>
+                    <td>String</td>
+                    <td>Description of the product.</td>
+                </tr>
+                <tr>
+                    <td>purchasePrice</td>
+                    <td>Double</td>
+                    <td>Purchase price of the product.</td>
+                </tr>
+                <tr>
+                    <td>salePrice</td>
+                    <td>Double</td>
+                    <td>Sale price of the product.</td>
+                </tr>
+                <tr>
+                    <td>stock</td>
+                    <td>Integer</td>
+                    <td>Stock of the product.</td>
+                </tr>
+                <tr>
+                    <td>minStock</td>
+                    <td>Integer</td>
+                    <td>Minimum stock of the product.</td>
+                </tr>
+                <tr>
+                    <td>batchSize</td>
+                    <td>Integer</td>
+                    <td>Batch size of the product.</td>
+                </tr>
+                <tr>
+                    <td>brandId</td>
+                    <td>Long</td>
+                    <td>Brand id of the product.</td>
+                </tr>
+                <tr>
+                    <td>categoryId</td>
+                    <td>Long</td>
+                    <td>Category id of the product.</td>
+                </tr>
+                <tr>
+                    <td>supplierId</td>
+                    <td>Long</td>
+                    <td>Supplier id of the product.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Invalid product information.</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Category, brand, or supplier not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/products/{id}</td>
+        <td>DELETE</td>
+        <td>Delete a product.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Product not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Product has relationships.</td>
+                </tr>
+            </table>
+        </td>
     </tr>
 </table>
