@@ -1,4 +1,3 @@
-
 <h1 align="center">STOCK MANAGEMENT SYSTEM</h1>
 <h2 align="center">Matthieu Brühwiler - Spring 2023 - V.1.0.0</h2>
 <br>
@@ -136,10 +135,21 @@ This chapter is an overview of the different endpoints of the application.
 Before reading details about the endpoints, all of them have four commons http status codes:
 * **200 / 201**: The request has succeeded.
 * **400**: The request has failed because of a bad request.
-* **401**: The request has failed because the user is not authenticated.
+* **401**: The request has failed because the employee is not authenticated.
 * **500**: The request has failed because of an internal server error.
 
 However, in the case of an error, whatever the status code is, the server always logs the error and returns a JSON object explaining the error.
+
+Before using the application, you should consider the following properties:
+* Some endpoints can be accessed depending on the employee's role. 
+* The application roles are:
+    * **ROLE_ADMIN**: id= 1
+    * **ROLE_MANAGER**: id= 2
+    * **ROLE_EMPLOYEE**: id= 3
+* The application has a default admin user with the following credentials:
+    * **username**: main
+    * **password**: A1234
+    * :warning: **This employee should be deactivated after the first connection.**
 
 <a name="authentication"></a>
 ### 4.1 Authentication
