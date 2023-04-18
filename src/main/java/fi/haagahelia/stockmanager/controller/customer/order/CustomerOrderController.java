@@ -421,7 +421,7 @@ public class CustomerOrderController {
      *      --> HttpStatus.OK if the customer order has been updated. (CustomerOrderDTO)
      *      --> HttpStatus.BAD_REQUEST if no customer order corresponds to the given id. (ErrorMessage)
      *      --> HttpStatus.NOT_MODIFIED if a product of the order had a problem. (ErrorMessage)
-     *      --> HttpStatus.CONFLICT if no customer order is already received. (ErrorMessage)
+     *      --> HttpStatus.CONFLICT if no customer order is already sent. (ErrorMessage)
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs. (ErrorMessage)
      */
     @PutMapping(value = "/orders/{id}/send", produces = "application/json")

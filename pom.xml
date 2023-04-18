@@ -12,7 +12,7 @@
 
     <groupId>fi.haaga-helia</groupId>
     <artifactId>StockManager</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>StockManager</name>
     <description>Stock management system</description>
 

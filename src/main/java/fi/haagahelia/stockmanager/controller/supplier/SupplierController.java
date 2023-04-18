@@ -316,7 +316,6 @@ public class SupplierController {
             log.info("User {} requested to update the supplier with the name: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
 
@@ -363,6 +362,5 @@ public class SupplierController {
             log.info("User {} requested to delete the supplier with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 }

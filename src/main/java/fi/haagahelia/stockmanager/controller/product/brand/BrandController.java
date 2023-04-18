@@ -142,7 +142,7 @@ public class BrandController {
      * @param user Corresponds to the user that is authenticated
      * @return a ResponseEntity containing a BrandDTO object or an ErrorMessage.
      *      --> HttpStatus.OK if the BrandDTO exists.
-     *      --> HttpStatus.NO_CONTENT if there is no brand.
+     *      --> HttpStatus.BAD_REQUEST if there is no brand.
      *      --> HttpStatus.INTERNAL_SERVER_ERROR if another error occurs.
      */
     @GetMapping(value = "/{id}", produces = "application/json")

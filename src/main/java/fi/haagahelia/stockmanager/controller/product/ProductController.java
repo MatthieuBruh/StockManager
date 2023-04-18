@@ -113,17 +113,20 @@ public class ProductController {
      */
     private void createProductObj(ProductCuDTO productCuDTO, Product product, Brand brand, Category category,
                                      Supplier supplier, boolean isUpdate) {
-        if (isUpdate) product.setId(productCuDTO.getId());
-        product.setName(productCuDTO.getName());
-        product.setDescription(productCuDTO.getDescription());
-        product.setPurchasePrice(productCuDTO.getPurchasePrice());
-        product.setSalePrice(productCuDTO.getSalePrice());
-        if (!isUpdate) product.setStock(productCuDTO.getStock());
-        product.setMinStock(productCuDTO.getMinStock());
-        product.setBatchSize(productCuDTO.getBatchSize());
-        product.setBrand(brand);
-        product.setCategory(category);
-        product.setSupplier(supplier);
+        if (isUpdate) {
+            product.setId(productCuDTO.getId());
+            product.setDescription(productCuDTO.getDescription());
+            product.setPurchasePrice(productCuDTO.getPurchasePrice());
+            product.setSalePrice(productCuDTO.getSalePrice());
+        }
+        else {
+            product.setStock(productCuDTO.getStock());
+            product.setMinStock(productCuDTO.getMinStock());
+            product.setBatchSize(productCuDTO.getBatchSize());
+            product.setBrand(brand);
+            product.setCategory(category);
+            product.setSupplier(supplier);
+        }
     }
 
     /**
@@ -489,7 +492,7 @@ public class ProductController {
             }
             if (solRepository.existsByProductId(id) || colRepository.existsByProductId(id)) {
                 log.info("User {} requested to delete the product with id: '{}'. PRODUCT HAS RELATIONS.", user.getUsername(), id);
-                ErrorResponse bm = new ErrorResponse(HttpStatus.BAD_REQUEST.getReasonPhrase(), "PRODUCT_HAS_RELATIONSHIPS");
+                ErrorResponse bm = new ErrorResponse(HttpStatus.CONFLICT.getReasonPhrase(), "PRODUCT_HAS_RELATIONSHIPS");
                 return new ResponseEntity<>(bm, HttpStatus.CONFLICT);
             }
             log.debug("User {} requested to delete the product with id: '{}'. DELETING PRODUCT.", user.getUsername(), id);

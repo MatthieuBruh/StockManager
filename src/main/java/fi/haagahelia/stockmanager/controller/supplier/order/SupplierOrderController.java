@@ -193,7 +193,6 @@ public class SupplierOrderController {
             log.info("User {} requested the supplier order with id: '{}'. UNEXPECTED ERROR!", user.getUsername(), id);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
