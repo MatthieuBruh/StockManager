@@ -39,6 +39,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
@@ -86,7 +87,7 @@ public class SupplierOrderControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -109,7 +110,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList[*].id").isNotEmpty());
@@ -120,7 +121,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList").doesNotExist());
     }
@@ -133,7 +134,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/orders/" + supplier.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -165,7 +166,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/orders/" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -178,7 +179,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/" + supplier.getId() + "/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList[*].id").isNotEmpty());
@@ -189,7 +190,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/" + 999L + "/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -200,7 +201,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/" + supplier.getId() + "/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList").doesNotExist());
     }
@@ -219,7 +220,7 @@ public class SupplierOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/orders/delivery=" + LocalDate.now().plusDays(12))
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierOrderDTOList[*].id").isNotEmpty())
@@ -243,7 +244,7 @@ public class SupplierOrderControllerTest {
         String requestBody = gson.toJson(supplierOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers/orders").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -276,7 +277,7 @@ public class SupplierOrderControllerTest {
         String requestBody = gson.toJson(supplierOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers/orders").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -289,7 +290,7 @@ public class SupplierOrderControllerTest {
         String requestBody = gson.toJson(supplierOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -323,7 +324,7 @@ public class SupplierOrderControllerTest {
         String requestBody = gson.toJson(supplierOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + 77L).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -338,7 +339,7 @@ public class SupplierOrderControllerTest {
         supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -367,7 +368,7 @@ public class SupplierOrderControllerTest {
     @Test
     public void sendOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + 77L + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -377,7 +378,7 @@ public class SupplierOrderControllerTest {
         SupplierOrder supplierOrder = supplierOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(3), true, false, supplier));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -392,11 +393,11 @@ public class SupplierOrderControllerTest {
         supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -425,7 +426,7 @@ public class SupplierOrderControllerTest {
     @Test
     public void receivedOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + 999L + "/received").accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -440,15 +441,15 @@ public class SupplierOrderControllerTest {
         supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -463,15 +464,15 @@ public class SupplierOrderControllerTest {
         supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/cancel-reception").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -508,18 +509,18 @@ public class SupplierOrderControllerTest {
         supplierOrderLineRepository.save(new SupplierOrderLine(5, 350.30, supplierOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + supplierOrder.getId() + "/cancel-reception").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
     @Test
     public void cancelReceivedOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/orders/" + 999L + "/received").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -529,7 +530,7 @@ public class SupplierOrderControllerTest {
         SupplierOrder supplierOrder = supplierOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(3), false, false, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + supplierOrder.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
@@ -541,17 +542,17 @@ public class SupplierOrderControllerTest {
 
         // Order is too old
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + supplierOrder.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
 
         // Order is sent
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + supplierOrder2.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
 
         // Wrong id
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + 989L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -561,14 +562,14 @@ public class SupplierOrderControllerTest {
         SupplierOrder supplierOrder = supplierOrderRepository.save(new SupplierOrder(LocalDate.now().minusDays(4), LocalDate.now().plusDays(3), false, false, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + supplierOrder.getId() + "/force").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteOrderForce_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/orders/" + 999L + "/force").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 }

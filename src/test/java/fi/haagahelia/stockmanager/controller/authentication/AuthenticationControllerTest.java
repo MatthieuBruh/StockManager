@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,7 +57,7 @@ public class AuthenticationControllerTest {
                         .post("/api/auth/login")
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("tokenType").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("tokenType").isNotEmpty())
@@ -78,7 +79,7 @@ public class AuthenticationControllerTest {
                         .post("/api/auth/login")
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.jsonPath("message").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("message").value("INVALID_USERNAME_OR_PASSWORD"));
@@ -97,7 +98,7 @@ public class AuthenticationControllerTest {
                         .post("/api/auth/login")
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.jsonPath("message").exists())
@@ -112,7 +113,7 @@ public class AuthenticationControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         String token;
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
@@ -129,7 +130,7 @@ public class AuthenticationControllerTest {
                         .header("Authorization", token)
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk());
     }
 
@@ -141,7 +142,7 @@ public class AuthenticationControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         String token;
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
@@ -158,7 +159,7 @@ public class AuthenticationControllerTest {
                         .header("Authorization", token)
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -170,7 +171,7 @@ public class AuthenticationControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         String token;
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
@@ -187,7 +188,7 @@ public class AuthenticationControllerTest {
                         .header("Authorization", token)
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
 
         passwordDTO = new EmpChangePasswordDTO(); passwordDTO.setCurrentPassword(password);
@@ -198,7 +199,7 @@ public class AuthenticationControllerTest {
                         .header("Authorization", token)
                         .header("Content-Type", MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 }

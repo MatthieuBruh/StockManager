@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -69,7 +70,7 @@ public class GeolocationControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -87,7 +88,7 @@ public class GeolocationControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/geolocations")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.geolocationDTOList").exists())
@@ -99,7 +100,7 @@ public class GeolocationControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/geolocations")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isNoContent());
     }
@@ -111,7 +112,7 @@ public class GeolocationControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/geolocations/" + geo.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
@@ -141,7 +142,7 @@ public class GeolocationControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/geolocations/" + 99L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
@@ -153,7 +154,7 @@ public class GeolocationControllerTest {
         String requestBody = new Gson().toJson(geo);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("streetName").exists())
@@ -187,35 +188,35 @@ public class GeolocationControllerTest {
         geo.setStreetName(null);
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setStreetName("Ratapihantie");
 
         geo.setStreetNumber(null);
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setStreetNumber("13");
 
         geo.setPostcode(null);
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setPostcode("00250");
 
         geo.setLocality(null);
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setLocality("Helsinki");
 
         geo.setCountry(null);
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setCountry("Switzerland");
     }
@@ -230,35 +231,35 @@ public class GeolocationControllerTest {
         geo.setStreetName("");
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setStreetName("Ratapihantie");
 
         geo.setStreetNumber("");
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setStreetNumber("13");
 
         geo.setPostcode("");
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setPostcode("00250");
 
         geo.setLocality("");
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setLocality("Helsinki");
 
         geo.setCountry("");
         requestBody = gson.toJson(geo);
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         geo.setCountry("Switzerland");
     }
@@ -270,11 +271,11 @@ public class GeolocationControllerTest {
         String requestBody = new Gson().toJson(geo);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/geolocations").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -283,14 +284,14 @@ public class GeolocationControllerTest {
         Geolocation geo = geoRepository.save(new Geolocation("Campus Battelle, Rue de la Tambourine", "17", "1227", "Carouge", "Switzerland"));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/geolocations/" + geo.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteGeolocation_WrongId() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/geolocations/" + 999L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -301,7 +302,7 @@ public class GeolocationControllerTest {
         customerRepository.save(new Customer("Paul", "Bocuz", "paul@bocuz.fi"));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/geolocations/" + geo.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 }

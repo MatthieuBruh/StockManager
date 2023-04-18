@@ -41,6 +41,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -92,7 +93,7 @@ public class CustomerOrderControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -112,7 +113,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.customerOrderDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.customerOrderDTOList[*].id").isNotEmpty());
@@ -135,7 +136,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/" + customerOrder.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -166,7 +167,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -193,7 +194,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/" + 999L + "/orders")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -207,7 +208,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/delivery=" + LocalDate.now().plusDays(5))
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.customerOrderDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.customerOrderDTOList[*].id").isNotEmpty())
@@ -220,7 +221,7 @@ public class CustomerOrderControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/delivery=" + LocalDate.now().plusDays(30))
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -232,7 +233,7 @@ public class CustomerOrderControllerTest {
         String requestBody = gson.toJson(customerOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -267,14 +268,14 @@ public class CustomerOrderControllerTest {
         customerOrderCuDTO.setDate(null);
         requestBody = gson.toJson(customerOrderCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         customerOrderCuDTO.setDate(LocalDate.now());
 
         customerOrderCuDTO.setDeliveryDate(null);
         requestBody = gson.toJson(customerOrderCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         customerOrderCuDTO.setDeliveryDate(LocalDate.now().plusDays(22));
     }
@@ -290,7 +291,7 @@ public class CustomerOrderControllerTest {
         String requestBody = gson.toJson(customerOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -327,7 +328,7 @@ public class CustomerOrderControllerTest {
         String requestBody = gson.toJson(customerOrderCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + 999L).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -342,7 +343,7 @@ public class CustomerOrderControllerTest {
         customerOrderLineRepository.save(new CustomerOrderLine(3, 340.0, customerOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -374,14 +375,14 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(5), false, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 
     @Test
     public void sendOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + 999L + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -391,7 +392,7 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(5), true, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -406,7 +407,7 @@ public class CustomerOrderControllerTest {
         customerOrderLineRepository.save(new CustomerOrderLine(3, 340.0, customerOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/send").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotModified());
     }
 
@@ -421,7 +422,7 @@ public class CustomerOrderControllerTest {
         customerOrderLineRepository.save(new CustomerOrderLine(3, 340.0, customerOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/cancel-sending").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").isNotEmpty())
@@ -450,7 +451,7 @@ public class CustomerOrderControllerTest {
     @Test
     public void cancelSendOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + 99L + "/cancel-sending").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -460,7 +461,7 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(5), false, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.put("/api/customers/orders/" + customerOrder.getId() + "/cancel-sending").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -470,14 +471,14 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(5), false, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/" + customerOrder.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteOrder_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/" + 99L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -487,7 +488,7 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now().minusDays(4), LocalDate.now().plusDays(5), false, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/" + customerOrder.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 
@@ -497,14 +498,14 @@ public class CustomerOrderControllerTest {
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now().plusDays(4), LocalDate.now().plusDays(10), false, employee, customer));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/" + customerOrder.getId() + "/force").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteOrderForce_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/" + 99L + "/force").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 }

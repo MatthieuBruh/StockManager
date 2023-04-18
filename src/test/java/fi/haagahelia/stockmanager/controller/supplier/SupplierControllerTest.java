@@ -37,6 +37,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
@@ -84,7 +85,7 @@ public class SupplierControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -103,7 +104,7 @@ public class SupplierControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.supplierDTOList[*].id").isNotEmpty());
@@ -117,7 +118,7 @@ public class SupplierControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/suppliers/" + supplier.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -154,7 +155,7 @@ public class SupplierControllerTest {
         String requestBody = new Gson().toJson(supplierCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -185,7 +186,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setName(null);
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         supplierCuDTO.setName("Supplier name");
 
@@ -193,7 +194,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setName("");
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         supplierCuDTO.setName("Supplier name");
 
@@ -201,18 +202,18 @@ public class SupplierControllerTest {
         supplierCuDTO.setGeolocationId(99L);
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotFound());
         supplierCuDTO.setGeolocationId(geo.getId());
 
         // Already exists
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/suppliers").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -226,7 +227,7 @@ public class SupplierControllerTest {
         String requestBody = new Gson().toJson(supplierCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -258,7 +259,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setName(null);
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         supplierCuDTO.setName(supplier.getName());
 
@@ -266,7 +267,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setName("");
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         supplierCuDTO.setName(supplier.getName());
 
@@ -274,7 +275,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setName("WRONG NAME");
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         supplierCuDTO.setName(supplier.getName());
 
@@ -282,7 +283,7 @@ public class SupplierControllerTest {
         supplierCuDTO.setGeolocationId(999L);
         requestBody = new Gson().toJson(supplierCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotFound());
         supplierCuDTO.setGeolocationId(geo.getId());
     }
@@ -293,14 +294,14 @@ public class SupplierControllerTest {
         Supplier supplier = supplierRepository.save(new Supplier("Zooko", "zooko@gmail.com", "", geo));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteSupplierById_WrongID() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/" + 999L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -313,7 +314,7 @@ public class SupplierControllerTest {
         productRepository.save(new Product("Toblerone", "Matterhorn", 10.40, 13.50, 20, 5, 100, brand, category, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -324,7 +325,7 @@ public class SupplierControllerTest {
         supplierOrderRepository.save(new SupplierOrder(LocalDate.now(), LocalDate.now().plusDays(7), false, false, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/suppliers/" + supplier.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 }

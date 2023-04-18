@@ -42,6 +42,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -99,7 +100,7 @@ public class StatisticsControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -138,7 +139,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/suppliers")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").isNotEmpty())
@@ -187,7 +188,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/customers")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").isNotEmpty())
@@ -210,7 +211,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/customers")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -240,7 +241,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/employee=" + employee.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("date").isNotEmpty())
@@ -265,7 +266,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/employee=" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -274,7 +275,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/employee=" + employee.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -293,7 +294,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/stock-to-sale-ratio")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").isNotEmpty())
@@ -310,7 +311,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/stock-to-sale-ratio")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -334,7 +335,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/sell-through-rate")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").isNotEmpty())
@@ -351,7 +352,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/sell-through-rate")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
 
 
@@ -373,7 +374,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/sell-through-rate")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 
@@ -397,7 +398,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/stock-outs")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").isNotEmpty())
@@ -415,7 +416,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/stock-outs")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
 
         // Precondition failed
@@ -458,7 +459,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/service-level")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("resultName").isNotEmpty())
@@ -482,7 +483,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/service-level")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
 
         CustomerOrder customerOrder = customerOrderRepository.save(new CustomerOrder(LocalDate.now(), LocalDate.now().plusDays(7), false, employee, customer));
@@ -491,7 +492,7 @@ public class StatisticsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/statistics/service-level")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 }

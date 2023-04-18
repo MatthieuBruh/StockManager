@@ -39,6 +39,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -90,7 +91,7 @@ public class CustomerOrderLineControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -118,7 +119,7 @@ public class CustomerOrderLineControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + customerOrder.getId() + "/details")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.customerOrderLineDTOList").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("_links.self.href").exists())
@@ -130,7 +131,7 @@ public class CustomerOrderLineControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + 999L + "/details")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -148,7 +149,7 @@ public class CustomerOrderLineControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + z690f.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("quantity").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("quantity").isNotEmpty())
@@ -178,13 +179,13 @@ public class CustomerOrderLineControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + 999L + "/details/product=" + z690f.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -201,7 +202,7 @@ public class CustomerOrderLineControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + z690f.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -218,7 +219,7 @@ public class CustomerOrderLineControllerTest {
         String requestBody = new Gson().toJson(customerOrderLineCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("quantity").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("quantity").isNotEmpty())
@@ -247,11 +248,11 @@ public class CustomerOrderLineControllerTest {
         String requestBody = new Gson().toJson(customerOrderLineCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + 999L + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + 888L).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -268,7 +269,7 @@ public class CustomerOrderLineControllerTest {
         String requestBody = new Gson().toJson(customerOrderLineCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 
@@ -285,7 +286,7 @@ public class CustomerOrderLineControllerTest {
         String requestBody = new Gson().toJson(customerOrderLineCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 
@@ -305,18 +306,18 @@ public class CustomerOrderLineControllerTest {
         customerOrderLineCuDTO.setQuantity(-100);
         requestBody = new Gson().toJson(customerOrderLineCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isUnprocessableEntity());
         customerOrderLineCuDTO.setQuantity(10);
 
         // Command line already exists
         requestBody = new Gson().toJson(customerOrderLineCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -332,7 +333,7 @@ public class CustomerOrderLineControllerTest {
         customerOrderLineRepository.save(new CustomerOrderLine(3, 340.0, customerOrder, product));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
@@ -349,16 +350,16 @@ public class CustomerOrderLineControllerTest {
 
         // Bad request
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/order=" + 999L + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + 88L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         // Already sent
         mvc.perform(MockMvcRequestBuilders.delete("/api/customers/orders/order=" + customerOrder.getId() + "/details/product=" + product.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isPreconditionFailed());
     }
 }

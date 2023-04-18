@@ -113,20 +113,17 @@ public class ProductController {
      */
     private void createProductObj(ProductCuDTO productCuDTO, Product product, Brand brand, Category category,
                                      Supplier supplier, boolean isUpdate) {
-        if (isUpdate) {
-            product.setId(productCuDTO.getId());
-            product.setDescription(productCuDTO.getDescription());
-            product.setPurchasePrice(productCuDTO.getPurchasePrice());
-            product.setSalePrice(productCuDTO.getSalePrice());
-        }
-        else {
-            product.setStock(productCuDTO.getStock());
-            product.setMinStock(productCuDTO.getMinStock());
-            product.setBatchSize(productCuDTO.getBatchSize());
-            product.setBrand(brand);
-            product.setCategory(category);
-            product.setSupplier(supplier);
-        }
+        product.setName(productCuDTO.getName());
+        product.setDescription(productCuDTO.getDescription());
+        product.setPurchasePrice(productCuDTO.getPurchasePrice());
+        product.setSalePrice(productCuDTO.getSalePrice());
+        product.setMinStock(productCuDTO.getMinStock());
+        product.setBatchSize(productCuDTO.getBatchSize());
+        product.setBrand(brand);
+        product.setCategory(category);
+        product.setSupplier(supplier);
+        if (isUpdate) product.setId(productCuDTO.getId());
+        if (!isUpdate) product.setStock(productCuDTO.getStock());
     }
 
     /**

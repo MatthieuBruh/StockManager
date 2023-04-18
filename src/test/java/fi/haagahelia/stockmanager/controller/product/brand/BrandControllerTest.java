@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -73,7 +74,7 @@ public class BrandControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -91,7 +92,8 @@ public class BrandControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/brands")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.brandDTOList").exists())
@@ -103,7 +105,8 @@ public class BrandControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/brands")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(status().isNoContent())
@@ -117,7 +120,8 @@ public class BrandControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/brands/" + cailler.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
@@ -134,7 +138,8 @@ public class BrandControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/brands/" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
@@ -145,7 +150,7 @@ public class BrandControllerTest {
         String requestBody = new Gson().toJson(brand);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/brands").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -162,7 +167,7 @@ public class BrandControllerTest {
         String requestBody = new Gson().toJson(brand);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/brands").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -172,7 +177,7 @@ public class BrandControllerTest {
         String requestBody = new Gson().toJson(brand);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/brands").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -182,11 +187,11 @@ public class BrandControllerTest {
         String requestBody = new Gson().toJson(brand);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/brands").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/brands").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -195,14 +200,14 @@ public class BrandControllerTest {
         Brand brand = brandRepository.save(new Brand("Sprüngli"));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/brands/" + brand.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteBrand_WrongId() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/brands/" + 999L).accept(MediaType.APPLICATION_JSON)
-                    .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -214,7 +219,7 @@ public class BrandControllerTest {
         productRepository.save(new Product("Toblerone", "Matterhorn", 10.40, 13.50, 20, 5, 100, brand, category, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/brands/" + brand.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 }

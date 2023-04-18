@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -74,7 +75,7 @@ public class CategoryControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -92,7 +93,7 @@ public class CategoryControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/categories")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.categoryDTOList").exists())
@@ -104,7 +105,7 @@ public class CategoryControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/categories")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isNoContent());
     }
@@ -116,7 +117,7 @@ public class CategoryControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/categories/" + category.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
@@ -135,7 +136,7 @@ public class CategoryControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/categories/" + 9999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
@@ -146,7 +147,7 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/categories").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -165,7 +166,7 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/categories").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -175,7 +176,7 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/categories").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -185,11 +186,11 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/categories").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         mvc.perform(MockMvcRequestBuilders.post("/api/categories").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -201,7 +202,7 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/categories/" + category.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("name").exists())
@@ -221,7 +222,7 @@ public class CategoryControllerTest {
         String requestBody = new Gson().toJson(categoryCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/categories/" + 999L).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -230,14 +231,14 @@ public class CategoryControllerTest {
         Category category = categoryRepository.save(new Category("Motherboard", "For the motherboards"));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/categories/" + category.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteCategory_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/categories/" + 999L).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -249,7 +250,7 @@ public class CategoryControllerTest {
         productRepository.save(new Product("Toblerone", "Matterhorn", 10.40, 13.50, 20, 5, 100, brand, category, supplier));
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/categories/" + category.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 }

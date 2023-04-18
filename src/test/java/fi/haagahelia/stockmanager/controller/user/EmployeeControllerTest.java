@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,7 +54,7 @@ public class EmployeeControllerTest {
         employeeRepository.save(employee);
         employee.setRoles(List.of(admin)); employeeRepository.save(employee);
         String requestBody = "{ \"username\": \"" + employee.getUsername() + "\", \"password\": \"" + password + "\"}";
-        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON)).andReturn();
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders.post("/api/auth/login").accept(MediaType.APPLICATION_JSON).content(requestBody).header("Content-Type", MediaType.APPLICATION_JSON).with(csrf())).andReturn();
         if (mvcResult.getResponse().getStatus() == 200) {
             AuthResponseDTO authResponseDTO = new Gson().fromJson(mvcResult.getResponse().getContentAsString(), AuthResponseDTO.class);
             token = "Bearer " + authResponseDTO.getToken();
@@ -72,7 +73,7 @@ public class EmployeeControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/employees")
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("_embedded.employeeDTOList").exists())
@@ -88,7 +89,7 @@ public class EmployeeControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/employees/" + employee.getId())
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
@@ -123,7 +124,7 @@ public class EmployeeControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .get("/api/employees/" + 999L)
                         .header("Authorization", token)
-                        .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON).with(csrf()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
@@ -138,7 +139,7 @@ public class EmployeeControllerTest {
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("email").exists())
@@ -177,35 +178,35 @@ public class EmployeeControllerTest {
         employeeCuDTO.setEmail(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setEmail("john@haaga.fi");
 
         employeeCuDTO.setUsername(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setUsername("jhndoe");
 
         employeeCuDTO.setFirstName(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setFirstName("John");
 
         employeeCuDTO.setLastName(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setLastName("Doe");
 
         employeeCuDTO.setPassword(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -221,28 +222,28 @@ public class EmployeeControllerTest {
         employeeCuDTO.setEmail("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setEmail("john@haaga.fi");
 
         employeeCuDTO.setUsername("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setUsername("jhndoe");
 
         employeeCuDTO.setFirstName("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setFirstName("John");
 
         employeeCuDTO.setLastName("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -256,13 +257,13 @@ public class EmployeeControllerTest {
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         employeeCuDTO.setEmail("john2@haaga.fi");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -276,13 +277,13 @@ public class EmployeeControllerTest {
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isCreated());
 
         employeeCuDTO.setUsername("jhndoe2");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.post("/api/employees").accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -299,7 +300,7 @@ public class EmployeeControllerTest {
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
@@ -340,7 +341,7 @@ public class EmployeeControllerTest {
         String requestBody = new Gson().toJson(employeeCuDTO);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 999L).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -359,14 +360,14 @@ public class EmployeeControllerTest {
         employeeCuDTO.setEmail(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setEmail(employeeSaved.getEmail());
 
         employeeCuDTO.setUsername(null);
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setUsername(employeeSaved.getUsername());
     }
@@ -386,14 +387,14 @@ public class EmployeeControllerTest {
         employeeCuDTO.setEmail("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setEmail(employeeSaved.getEmail());
 
         employeeCuDTO.setUsername("");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
         employeeCuDTO.setUsername(employeeSaved.getUsername());
     }
@@ -413,14 +414,14 @@ public class EmployeeControllerTest {
         employeeCuDTO.setEmail("wrong@email.com");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotFound());
         employeeCuDTO.setEmail(employeeSaved.getEmail());
 
         employeeCuDTO.setUsername("wrongUsername");
         requestBody = new Gson().toJson(employeeCuDTO);
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON).content(requestBody)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotFound());
         employeeCuDTO.setUsername(employeeSaved.getUsername());
     }
@@ -433,7 +434,7 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/activate").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
@@ -464,7 +465,7 @@ public class EmployeeControllerTest {
     @Test
     public void activateEmployee_BadRequest() throws Exception {
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 99L + "/activate").accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -476,7 +477,7 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
@@ -513,7 +514,7 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -526,11 +527,11 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/add-role/" + 99L).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 888L + "/add-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -543,7 +544,7 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("id").value(employeeSaved.getId()))
@@ -579,7 +580,7 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isNotAcceptable());
     }
 
@@ -592,11 +593,11 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + employeeSaved.getId() + "/remove-role/" + 99L).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(MockMvcRequestBuilders.put("/api/employees/" + 888L + "/remove-role/" + savedRole.getId()).accept(MediaType.APPLICATION_JSON)
-                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                        .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -608,14 +609,14 @@ public class EmployeeControllerTest {
         Employee employeeSaved = employeeRepository.save(employee);
 
         mvc.perform(MockMvcRequestBuilders.delete("/api/employees/" + employeeSaved.getId()).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void deleteEmployeeById_WrongId() throws Exception {
         mvc.perform(MockMvcRequestBuilders.delete("/api/employees/" + 99L).accept(MediaType.APPLICATION_JSON)
-                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token))
+                .header("Content-Type", MediaType.APPLICATION_JSON).header("Authorization", token).with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 }
