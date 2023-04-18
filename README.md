@@ -24,7 +24,9 @@ This application is a starting point for a stock management system. It is possib
 
 The application is a backend application that uses a MariaDB database. It is possible to interact with the system using the provided REST API. The author highly recommends using a frontend application to interact with the system. For the moment, the author has not developed a frontend application, but it is planned to do so in the future.
 
-**The author is not responsible for any damage caused by the use of this application.**
+---
+---
+<br/>
 
 <a name="requirements"></a>
 ## Requirements
@@ -35,6 +37,10 @@ The application is using the Java Spring 3.0.0.RELEASE framework. In order to ru
 * A web server that supports Jakarta EE. (For example: Apache Tomcat 10.0.0 or higher.)
 
 *It is possible that the application works with another version of the components, but it has not been tested.*
+
+---
+---
+<br/>
 
 <a name="installation"></a>
 ## Installation
@@ -102,6 +108,10 @@ At this point, you can now start the server. The Spring application manage by it
 To run the Apache Tomcat server, you need to execute the `catalina.bat` file located in the `[TOMCAT_INSTALLATION]/bin` folder.
 
 The application should be available at the following URL: `http://IP_ADDRESS:8080/stockmanager/api`.
+
+---
+---
+<br/>
 
 <a name="usage"></a>
 ## Usage
@@ -207,6 +217,8 @@ To access the application, you need to be authenticated. The authentication is b
         </td>
     </tr>
 </table>
+
+---
 
 ### 2. Employees
 
@@ -447,4 +459,690 @@ To access the application, you need to be authenticated. The authentication is b
             </table>
         </td>
     </tr>
-</tale>
+</table>
+
+
+#### 2.1 Employee statistics
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+---
+
+### 3. Geolocations
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/geolocations</td>
+        <td>GET</td>
+        <td>Get all the geolocations.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No geolocation found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/geolocations/{id}</td>
+        <td>GET</td>
+        <td>Get a geolocations by its id.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No geolocation matches with the given id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/geolocations</td>
+        <td>POST</td>
+        <td>Create a new geolocation.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>streetName</td>
+                    <td>String</td>
+                    <td>The street name of the geolocation</td>
+                </tr>
+                <tr>
+                    <td>streetNumber</td>
+                    <td>String</td>
+                    <td>The street number of the geolocation</td>
+                </tr>
+                <tr>
+                    <td>postcode</td>
+                    <td>String</td>
+                    <td>The postcode of the geolocation</td>
+                </tr>
+                <tr>
+                    <td>locality</td>
+                    <td>String</td>
+                    <td>The locality of the geolocation</td>
+                </tr>
+                <tr>
+                    <td>country</td>
+                    <td>String</td>
+                    <td>The country of the geolocation</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>A given value is null or empty.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Street name, number, locality, and country already exists together.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/geolocations</td>
+        <td>DELETE</td>
+        <td>Delete a geolocation.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No geolocation matches with the given id.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Supplier or customer is still using this address.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+---
+
+### 3. Customers
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/customers</td>
+        <td>GET</td>
+        <td>Get all the customers.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/{email}</td>
+        <td>GET</td>
+        <td>Get a customer by his/her email.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No customer matches with the given email.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers</td>
+        <td>POST</td>
+        <td>Create a new customer.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>firstName</td>
+                    <td>String</td>
+                    <td>The first name of the customer</td>
+                </tr>
+                <tr>
+                    <td>lastName</td>
+                    <td>String</td>
+                    <td>The last name of the customer</td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>String</td>
+                    <td>The email of the customer</td>
+                </tr>
+                <tr>
+                    <td>geolocationId</td>
+                    <td>Long</td>
+                    <td>The id of the geolocation of the customer</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>A given value is null or empty. (geolocation can be null)</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Geolocation not found.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Email already exists.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/{email}</td>
+        <td>PUT</td>
+        <td>Update a customer.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>firstName</td>
+                    <td>String</td>
+                    <td>The first name of the customer</td>
+                </tr>
+                <tr>
+                    <td>lastName</td>
+                    <td>String</td>
+                    <td>The last name of the customer</td>
+                </tr>
+                <tr>
+                    <td>geolocationId</td>
+                    <td>Long</td>
+                    <td>The id of the geolocation of the customer</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Customer not found or a given value is null or empty. (geolocation can be null)</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Geolocation not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/{email}</td>
+        <td>DELETE</td>
+        <td>Delete a customer, but not his/her command(s).</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Customer not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+#### 3.1 Customer orders
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/customers/orders</td>
+        <td>GET</td>
+        <td>Get all the customer orders.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer order found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/{customerId}/orders</td>
+        <td>GET</td>
+        <td>Get all the customer orders.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer order found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No customer corresponds to the given id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/{id}</td>
+        <td>GET</td>
+        <td>Get a customer order by its id.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No customer order matches with the given id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders</td>
+        <td>POST</td>
+        <td>Create a new customer order.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>date</td>
+                    <td>LocalDate</td>
+                    <td>The date of the order</td>
+                </tr>
+                <tr>
+                    <td>deliveryDate</td>
+                    <td>LocalDate</td>
+                    <td>The delivery date of the order</td>
+                </tr>
+                <tr>
+                    <td>isSent</td>
+                    <td>Boolean</td>
+                    <td>True if the order is sent, false otherwise</td>
+                </tr>
+                <tr>
+                    <td>productId</td>
+                    <td>Long</td>
+                    <td>The id of the product</td>
+                </tr>
+                <tr>
+                    <td>customerId</td>
+                    <td>Long</td>
+                    <td>The id of the customer</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Order date or delivery date is null.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/{id}</td>
+        <td>PUT</td>
+        <td>Update the delivery date of a customer order.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>deliveryDate</td>
+                    <td>LocalDate</td>
+                    <td>The delivery date of the order</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Order not found.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/{id}/send</td>
+        <td>PUT</td>
+        <td>Change the state of the customer order as shipped.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No customer order matches with the given id.</td>
+                </tr>
+                <tr>
+                    <td>304</td>
+                    <td>A product of the order had a problem.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>No customer order is already sent.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+#### 3.2 Customer order lines
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/order={orderId}/details</td>
+        <td>GET</td>
+        <td>Get all the customer order lines of a customer order.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer order line found.</td>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>No customer order corresponds to the given id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/order={orderId}/details/product={productId}</td>
+        <td>GET</td>
+        <td>Get a customer order line by its id.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>204</td>
+                    <td>No customer order line for this order.</td>
+                <tr>
+                    <td>400</td>
+                    <td>Wrong customer order or product id.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/order={orderId}/details/product={productId}</td>
+        <td>POST</td>
+        <td>Create a new customer order line.</td>
+        <td>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>quantity</td>
+                    <td>Integer</td>
+                    <td>The quantity of the product</td>
+                </tr>
+                <tr>
+                    <td>sellPrice</td>
+                    <td>Double</td>
+                    <td>The sell price of the line.</td>
+                </tr>
+            </table>
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                <tr>
+                    <td>400</td>
+                    <td>Wrong customer order or product id.</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Order line already exist for this order.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Already sent or delivery date is passed.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Product stock is too low.</td>
+                </tr>
+                <tr>
+                    <td>422</td>
+                    <td>Order quantity is too low.</td>
+                </tr>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>/api/customers/orders/order={orderId}/details/product={productId}</td>
+        <td>DELETE</td>
+        <td>Delete a customer order line.</td>
+        <td></td>
+        <td>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>Wrong customer order or product id.</td>
+                </tr>
+                <tr>
+                    <td>412</td>
+                    <td>Already sent or delivery date is passed.</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+---
+
+### 4 Suppliers
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+#### 4.1 Supplier orders
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+#### 4.2 Supplier order lines
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+---
+
+### 5 Brands
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+---
+
+### 6 Categories
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
+
+
+---
+
+### 7 Products
+<table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Request Body</th>
+        <th>HTTP Status</th>
+    </tr>
+</table>
