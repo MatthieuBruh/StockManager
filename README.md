@@ -9,6 +9,7 @@
 1. [Introduction](#introduction)
 2. [Requirements](#requirements)
 3. [Installation](#installation)
+<br>
 3.1 [Specify the environments variables to Apache Tomcat](#spec-env-variables)
 3.2 [Create the properties file](#properties-file)
 3.3 [WAR file of the application](#war-file)
