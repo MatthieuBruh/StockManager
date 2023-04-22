@@ -153,6 +153,15 @@ Before using the application, you should consider the following properties:
     * **password**: A1234
     * :warning: **This employee should be deactivated after the first connection.**
 
+It is important to note that most endpoints that return a list have paging, searching, and sorting methods.
+As in the following example: **/api/brands?page=0&size=100&sort=name,asc&searchQuery=B**.
+* page: The page number.
+* size: The number of elements per page.
+* sort: The sorting method. The first parameter is the field to sort, and the second parameter is the sorting order (asc or desc).
+* searchQuery: The search query.
+
+<br>
+
 <a name="authentication"></a>
 ### 4.1 Authentication
 To access the application, you need to be authenticated. The authentication is based on the JWT token.
