@@ -1,3 +1,4 @@
+
 <h1 align="center">STOCK MANAGEMENT SYSTEM</h1>
 <h2 align="center">Matthieu Brühwiler - Spring 2023 - V.1.0.0</h2>
 <br>
@@ -30,11 +31,11 @@
 ## 1. Introduction
 Stock Manager is a Java Spring application that allows you to manage: product stocks, supplier and customer orders, and your employees.
 
-It has been developed in the context of the Bachelor's thesis of Matthieu Brühwiler at the [University of Applied Sciences Haaga-Helia](https://www.haaga-helia.fi/en) in the spring of 2023.
+It was developed in the context of the Bachelor's thesis of Matthieu Brühwiler at the [University of Applied Sciences Haaga-Helia](https://www.haaga-helia.fi/en) in the spring of 2023.
 
-This application is a starting point for a stock management system. It is possible to use it like this, but it is recommended to adapt it to your needs. You are free to modify the code as you wish, however, you must respect the license.
+This application is a starting point for a stock management system. It is possible to use it like this, but adapting it to your needs is recommended. You are free to modify the code as you wish. However, you must respect the license.
 
-The application is a backend application that uses a MariaDB database. It is possible to interact with the system using the provided REST API. The author highly recommends using a frontend application to interact with the system. For the moment, the author has not developed a frontend application, but it is planned to do so in the future.
+The application is a backend application that uses a MariaDB database. It is possible to interact with the system using the provided REST API. The author highly recommends using a front-end application to interact with the system. For the moment, the author has not developed a front-end application, but it is planned to do so in the future.
 
 ---
 ---
@@ -42,13 +43,13 @@ The application is a backend application that uses a MariaDB database. It is pos
 
 <a name="requirements"></a>
 ## 2. Requirements
-The application is using the Java Spring 3.0.0.RELEASE framework. In order to run the application, you need to have the following components:
-* Java JDK **17** or higher.
-* MariaDB **10.10.0** or higher.
-* Apache Maven **4.0.0** or higher.
-* A web server that supports Jakarta EE. (For example: Apache Tomcat 10.0.0 or higher.)
+The application uses Java Spring 3.0.0.RELEASE framework. In order to run the application, you need to have the following components:
+* Java JDK **17** or higher,
+* MariaDB **10.10.0** or higher,
+* Apache Maven **4.0.0** or higher,
+* A web server that supports Jakarta EE. (For example, Apache Tomcat 10.0.0 or higher.)
 
-*It is possible that the application works with another version of the components, but it has not been tested.*
+*The application may work with another version of the components, but it has not been tested.*
 
 ---
 ---
@@ -56,15 +57,14 @@ The application is using the Java Spring 3.0.0.RELEASE framework. In order to ru
 
 <a name="installation"></a>
 ## 3. Installation
-*This installation tutorial is based for an Apache Tomcat server on a Windows operating system. The adaptation to another server or operating system is left to the user.*
+*This installation tutorial is based on an Apache Tomcat server on a Windows operating system. The adaptation to another server or operating system is left to the user.*
 
-As stated in the requirements, you need to have a web server that supports Jakarta EE. For this tutorial, we will use an Apache Tomcat server 11.0.0. The installation of the server is not covered in this tutorial. You can find the installation instructions on the [Apache Tomcat website](https://tomcat.apache.org/download-11.cgi).
+As stated in the requirements, you must have a web server that supports Jakarta EE. For this tutorial, we will use an Apache Tomcat server 11.0.0. The installation of the server is not covered in this tutorial. You can find the installation instructions on the [Apache Tomcat website](https://tomcat.apache.org/download-11.cgi).
 
-To run the project, you need to specify various information to the Spring Framework.
-The Spring framework requires a properties file. 
+To run the project, you must specify various information to the Spring Framework in a properties file.
 
 <a name="spec-env-variables"></a>
-### 3.1 Specify the environments variables to Apache Tomcat
+### 3.1 Specify the environment variables to Apache Tomcat.
 In order to specify the environment variables to Apache Tomcat, you need to create a file named `stockmanager.xml` in the `[TOMCAT_INSTALLATION]/conf/Catalina/localhost`. This file should contain the following content:
 
 ```xml
@@ -76,7 +76,7 @@ In order to specify the environment variables to Apache Tomcat, you need to crea
 
 <a name="properties-file"></a>
 ### 3.2 Create the properties file
-The Spring application requires you to provide information about the used profile, the database connection, the CORS properties, and the JWT properties. This file should be located in the `PATH/TO/PROPERTIES/FILE` specified in the previous step.
+The Spring application requires you to provide information about the profile, the database connection, the CORS properties, and the JWT properties. This file should be located in the `PATH/TO/PROPERTIES/FILE` specified in the previous step.
 
 Below is an **example** of a properties file:
 
@@ -107,20 +107,22 @@ jwt.secret=THIS_IS_A_BAD_SECRET
 
 <a name="war-file"></a>
 ### 3.3 WAR file of the application
-To deploy the application on Apache Tomcat, you need to create a WAR file. As written in the requirements, the project is based on the Maven framework. By this fact, to create the WAR file, you need to execute the following commands:
+To deploy the application on Apache Tomcat, you need to create a WAR file. As written in the requirements, the project is based on the Maven framework. Of this fact, to create the WAR file, you need to execute the following commands:
 
 ```shell
 mvn clean package
 mvn install
 ```
 
-After creating the WAR file named `stockmanager.war`, you need to copy it in the `[TOMCAT_INSTALLATION]/webapps` folder.
+* The application contains several tests, and the duration of the tests can take 10 minutes. It is important not to skip the tests when creating the WAR file. If you skip the tests, the application may not work properly.*
+
+After creating the WAR file named `stockmanager.war`, you need to copy it into the `[`TOMCAT_INSTALLATION]/webapps` folder.
 
 <a name="start-server"></a>
 ### 3.4 Start the server
-At this point, you can now start the server. The Spring application manage by itself the database schema automatically. It will create, update, and delete the tables as needed.
+At this point, you can now start the server. The Spring application manages by itself the database schema automatically. It will create, update, and delete the tables as needed.
 
-To run the Apache Tomcat server, you need to execute the `catalina.bat` file located in the `[TOMCAT_INSTALLATION]/bin` folder.
+To run the Apache Tomcat server, you must execute the `catalina.bat` file located in the `[TOMCAT_INSTALLATION]/bin` folder.
 
 The application should be available at the following URL: `http://IP_ADDRESS:8080/stockmanager/api`.
 
@@ -132,7 +134,7 @@ The application should be available at the following URL: `http://IP_ADDRESS:808
 ## 4. Usage
 This chapter is an overview of the different endpoints of the application.
 
-Before reading details about the endpoints, all of them have four commons http status codes:
+Before reading details about the endpoints, all of them have four common HTTP status codes:
 * **200 / 201**: The request has succeeded.
 * **400**: The request has failed because of a bad request.
 * **401**: The request has failed because the employee is not authenticated.
@@ -420,7 +422,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>400</td>
-                    <td>No employee found, or the given email and username does not corresponds.</td>
+                    <td>No employee found, or the given email and username do not correspond.</td>
                 </tr>
             </table>
         </td>
@@ -548,7 +550,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>204</td>
-                    <td>No orders related to this employee found.</td>
+                    <td>No orders related to this employee were found.</td>
                 </tr>
                 <tr>
                     <td>400</td>
@@ -560,7 +562,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/statistics/stock-to-sale-ratio?date={optionalDate}</td>
         <td>GET</td>
-        <td>Calculate the stock to sale ratio.</td>
+        <td>Calculate the stock-to-sale ratio.</td>
         <td></td>
         <td>
             <table>
@@ -578,7 +580,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/statistics/sell-through-rate?date={optionalDate}</td>
         <td>GET</td>
-        <td>Calculate the sell through rate.</td>
+        <td>Calculate the sell-through rate.</td>
         <td></td>
         <td>
             <table>
@@ -592,7 +594,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>412</td>
-                    <td>No product received during this period.</td>
+                    <td>No product was received during this period.</td>
                 </tr>
             </table>
         </td>
@@ -745,7 +747,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/geolocations</td>
         <td>DELETE</td>
-        <td>Delete a geolocation.</td>
+        <td>Delete geolocation.</td>
         <td></td>
         <td>
             <table>
@@ -809,7 +811,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>400</td>
-                    <td>No customer matches with the given email.</td>
+                    <td>No customer matches the given email.</td>
                 </tr>
             </table>
         </td>
@@ -1183,7 +1185,7 @@ To access the application, you need to be authenticated. The authentication is b
                 <tr>
                     <td>sellPrice</td>
                     <td>Double</td>
-                    <td>The sell price of the line.</td>
+                    <td>The selling price of the line.</td>
                 </tr>
             </table>
         </td>
@@ -1198,7 +1200,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>409</td>
-                    <td>Order line already exist for this order.</td>
+                    <td>Order line already exists for this order.</td>
                 </tr>
                 <tr>
                     <td>412</td>
@@ -1592,7 +1594,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/suppliers/orders/{id}/send</td>
         <td>PUT</td>
-        <td>Update a supplier order to sent.</td>
+        <td>Update a supplier order to send.</td>
         <td></td>
         <td>
             <table>
@@ -1900,7 +1902,7 @@ To access the application, you need to be authenticated. The authentication is b
                 </tr>
                 <tr>
                     <td>400</td>
-                    <td>Brand already exists or the name is null or empty.</td>
+                    <td>Brand already exists, or the name is null or empty.</td>
                 </tr>
                 <tr>
                     <td>409</td>
@@ -2132,7 +2134,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/products/{id}/details</td>
         <td>GET</td>
-        <td>Get a product details.</td>
+        <td>Get product details.</td>
         <td></td>
         <td>
             <table>
@@ -2150,7 +2152,7 @@ To access the application, you need to be authenticated. The authentication is b
     <tr>
         <td>/api/products/low</td>
         <td>GET</td>
-        <td>Get all products with a low stock. </td>
+        <td>Get all products with low stock. </td>
         <td></td>
         <td>
             <table>
