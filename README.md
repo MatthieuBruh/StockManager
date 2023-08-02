@@ -31,7 +31,7 @@
 ## 1. Introduction
 Stock Manager is a Java Spring application that allows you to manage: product stocks, supplier and customer orders, and your employees.
 
-It was developed in the context of the Bachelor's thesis of Matthieu Brühwiler at the [University of Applied Sciences Haaga-Helia](https://www.haaga-helia.fi/en) in the spring of 2023.
+It was developed in the context of the [Bachelor's thesis of Matthieu Brühwiler](https://urn.fi/URN:NBN:fi:amk-2023051912121) at the [University of Applied Sciences Haaga-Helia](https://www.haaga-helia.fi/en) in the spring of 2023.
 
 This application is a starting point for a stock management system. It is possible to use it like this, but adapting it to your needs is recommended. You are free to modify the code as you wish. However, you must respect the license.
 
